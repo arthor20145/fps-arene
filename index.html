@@ -43,6 +43,9 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 #settingsPanel{width:min(560px,92vw);max-height:86vh;overflow:auto;background:rgba(12,16,20,.98);border:2px solid #7c4;box-shadow:0 0 30px rgba(0,0,0,.7);padding:22px;box-sizing:border-box}
 .setting{margin:18px 0;text-align:left}.setting label{display:flex;justify-content:space-between;gap:16px;margin-bottom:8px;font-size:18px}.setting input[type=range]{width:100%;accent-color:#7c4}.settingValue{font-weight:bold;color:#ffd65a}
 #pauseButtons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}#settingsBack{background:#888}
+#quitBtn{background:#c33;color:#fff}
+#quitBtn:hover{background:#e04444}
+#quitMsg{font-size:17px;opacity:.9;margin:16px 0 0;max-width:460px}
 
 #cheat{display:none;background:rgba(0,0,0,.9);z-index:25;cursor:default}
 #cheatPanel{width:min(620px,92vw);max-height:86vh;overflow:auto;background:rgba(12,16,20,.98);border:2px solid #c33;box-shadow:0 0 30px rgba(0,0,0,.7);padding:22px;box-sizing:border-box}
@@ -176,7 +179,8 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  </div></div>
 <div class="ov" id="pause">
 <h1>PAUSE</h1>
-<div id="pauseButtons"><button id="resumeBtn">Reprendre</button><button id="settingsBtn">Paramètres</button><button id="cheatBtn">🧪 Cheats</button></div>
+<div id="pauseButtons"><button id="resumeBtn">Reprendre</button><button id="settingsBtn">Paramètres</button><button id="cheatBtn">🧪 Cheats</button><button id="quitBtn">🚪 Quitter la partie</button></div>
+<p id="quitMsg"></p>
 </div>
 <div class="ov" id="settings" style="display:none;cursor:default">
 <div id="settingsPanel"><h1>PARAMÈTRES</h1>
@@ -428,9 +432,29 @@ function applySettings(){
 
 function resumeGame(){
   if(state!=='pause')return;
+  quitArmed=false;$('quitMsg').textContent='';
   $('pause').style.display='none';
   state='play';
   lock();
+}
+/* quitter la partie en cours : confirmation puis retour au menu de démarrage */
+let quitArmed=false,quitTimer=0;
+function quitGame(){
+  if(state!=='pause')return;
+  if(!quitArmed){
+   quitArmed=true;quitTimer=4;
+   $('quitMsg').innerHTML='Tu vas perdre la partie en cours (vague '+wave+', score '+P.score+').<br><b>Clique encore sur « Quitter » pour confirmer.</b>';
+   return;
+  }
+  save.bank+=P.points;saveGame();
+  quitArmed=false;quitTimer=0;$('quitMsg').textContent='';
+  ['pause','settings','shop','cheat','over','armory'].forEach(i=>$(i).style.display='none');
+  $('hud').style.display='none';
+  try{document.exitPointerLock()}catch(e){}
+  held=0;adsHeld=0;
+  state='menu';mp=false;syncMp();
+  newGame();
+  $('menu').style.display='flex';
 }
 
 /* ================= CHEATS ================= */
@@ -523,6 +547,7 @@ function setupSettings(){
   $('fxShadow').onchange=e=>{settings.fxShadow=e.target.checked;applyQuality()};
   $('fxExtra').onchange=e=>{settings.fxExtra=e.target.checked;applyQuality()};
   $('resumeBtn').onclick=resumeGame;
+  $('quitBtn').onclick=e=>{e.stopPropagation();quitGame()};
   $('cheatBtn').onclick=e=>{e.stopPropagation();cheatOpen()};
   
   $('cheatClose').onclick=e=>{e.stopPropagation();$('cheat').style.display='none';$('pause').style.display='flex'};
@@ -1130,6 +1155,7 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
 }
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;T+=dt;if(state==='play')update(dt);
+ if(quitArmed&&state==='pause'){quitTimer-=dt;if(quitTimer<=0){quitArmed=false;$('quitMsg').textContent=''}}
  if(FX.ok&&composer){if(grade){grade.uniforms.uTime.value=now/1000;grade.uniforms.uHurt.value=Math.min(1,vig)}composer.render()}
  else renderer.render(scene,cam)}
 /* ================= ÉTAT & ENTRÉES ================= */
