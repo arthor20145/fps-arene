@@ -838,18 +838,28 @@ ADS_CFG.forEach((a,i)=>{W[i].ads=a;W[i].az=i===3?58:i===4?16:25});
 const MUZ=[{y:.014,z:-.87,r:.023},{y:.012,z:-.30,r:.018},{y:.02,z:-1.18,r:.035},{y:.02,z:-1.68,r:.03},{y:.02,z:-.99,r:.05},{y:.02,z:-.62,r:.02}];
 const SIGHT=[{y:.075,z:.02},{y:.062,z:-.02},{y:.075,z:.02},{y:.16,z:-.30},{y:.115,z:-.05},{y:0,z:0}];
 const silMat=new R.MeshStandardMaterial({color:0x14171a,roughness:.55,metalness:.7,envMapIntensity:.7});
-const lensMat=new R.MeshBasicMaterial({color:0x2a4a66,transparent:true,opacity:.55});
-const dotMat=new R.MeshBasicMaterial({color:0xff3b30});
+const lensMat=new R.MeshBasicMaterial({color:0x8fd0ff,transparent:true,opacity:.14,depthWrite:false,side:R.DoubleSide});
+const scopeTubeMat=new R.MeshStandardMaterial({color:0x111316,roughness:.45,metalness:.8,envMapIntensity:.7,side:R.DoubleSide});
+const dotMat=new R.MeshBasicMaterial({color:0xff3b30,depthWrite:false});
 const attScope=[],attSil=[];
 for(let i=0;i<6;i++){
-  /* --- viseur : corps + lentille + réticule --- */
+  /* --- viseur : tube creux + lentille transparente + réticule --- */
   const s=new R.Group();const sz=SIGHT[i];
   if(i!==5){
-   gc(s,.026,.026,.09,GM.black,0,sz.y,sz.z,Math.PI/2);
-   gc(s,.022,.022,.012,lensMat,0,sz.y,sz.z-.05,Math.PI/2);
-   gc(s,.009,.009,.006,dotMat,0,sz.y,sz.z-.052,Math.PI/2);
-   gp(s,.014,.014,.05,GM.black,0,sz.y-.02,sz.z); /* rail */
-   gc(s,.03,.03,.02,GM.steel,.045,sz.y,sz.z+.01,Math.PI/2); /* molette */
+   /* tube ouvert (RingGeometry) : on voit à travers le viseur */
+   const ring=new R.Mesh(new R.RingGeometry(.0205,.0285,20,1,true),scopeTubeMat);
+   ring.position.set(0,sz.y,sz.z-.052);ring.rotation.x=-Math.PI/2;s.add(ring);
+   /* bague arrière du tube, pour l'épaisseur */
+   const ringB=new R.Mesh(new R.RingGeometry(.0205,.0285,20,1,true),scopeTubeMat);
+   ringB.position.set(0,sz.y,sz.z+.038);ringB.rotation.x=-Math.PI/2;s.add(ringB);
+   /* lentille : verre semi-transparent */
+   const lens=new R.Mesh(new R.RingGeometry(.0,.0205,20),lensMat);
+   lens.position.set(0,sz.y,sz.z-.052);lens.rotation.x=-Math.PI/2;s.add(lens);
+   /* réticule */
+   gc(s,.009,.009,.006,dotMat,0,sz.y,sz.z-.056,Math.PI/2);
+   /* rail + molette (sur le côté, ne bloquent pas la ligne de vue) */
+   gp(s,.014,.014,.05,GM.black,0,sz.y-.028,sz.z);
+   gc(s,.03,.03,.02,GM.steel,.045,sz.y,sz.z+.01,Math.PI/2);
   }
   s.visible=false;guns[i].add(s);attScope[i]=s;
   /* --- silencieux : tube + bouchon --- */
