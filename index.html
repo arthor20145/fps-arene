@@ -190,12 +190,14 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 <button id="settingsBack">Retour à la pause</button></div></div>
 <div class="ov" id="shop"><div id="shopPanel"><h1>🛒 SHOP</h1><div id="shopPoints">Points : 0</div><div class="shopGrid" id="shopGrid"></div><button id="shopClose">Fermer (B / Échap)</button></div></div>
 <div class="ov" id="armory"><div id="armoryPanel"><h1>🔧 ARMURERIE</h1><div id="armPoints">Points : 0</div>
- <div class="mgroup"><span class="mtitle">Arme</span><div class="armWeapons" id="armWeapons"></div></div>
+ <div class="mgroup"><span class="mtitle">Arme</span><div class="armWeapons" id="armWeapons"></div>
+  <p style="font-size:12px;opacity:.6;margin:8px 2px 0">Clique sur le ★ d'une arme pour la définir comme arme de départ.</p>
+  <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button></div>
  <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
  <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
  <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
  <div class="mgroup"><span class="mtitle">Aperçu des stats</span><div id="armStats"></div></div>
- <button id="armoryClose">Fermer (retour au menu)</button><button id="armSetStart">Définir comme arme de départ</button></div></div>
+ <button id="armoryClose">Fermer (retour au menu)</button></div></div>
 <div class="ov" id="cheat"><div id="cheatPanel"><h1>🧪 PANNEAU DE CHEATS</h1><div id="cheatStatus"></div><div id="cheatList"></div><button id="cheatClose">Fermer (Échap)</button></div></div>
 <div class="ov" id="over"><h1>GAME OVER</h1><p id="fs"></p><button id="again">Rejouer</button><button id="backMenu" style="background:#888">Changer de mode / difficulté</button></div>
 <script>window.onerror=function(m,s,l){var d=document.getElementById('err');d.style.display='block';d.textContent='Erreur JS : '+m+' (ligne '+l+')'}
@@ -701,9 +703,11 @@ function updateArmoryUI(){
  $('armPoints').textContent='Solde : '+save.bank+' pts';
  const wg=$('armWeapons');wg.innerHTML='';
  W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
-  const st=document.createElement('small');st.textContent=!save.own[i]?'🔒 verrouillée':(i===save.start?'★ départ':'disponible');
-  const mark=document.createElement('span');mark.textContent='★';mark.title='Définir comme arme de départ';
-  mark.style.cssText='cursor:pointer;font-size:15px;color:#ffd65a;display:'+(i===save.start?'inline':'none');
+  const isStart=i===save.start;
+  const st=document.createElement('small');st.textContent=!save.own[i]?'🔒 verrouillée':(isStart?'★ arme de départ':'départ ?');
+  const mark=document.createElement('span');mark.textContent='★';mark.title=isStart?'Arme de départ actuelle':'Définir comme arme de départ';
+  /* l'étoile reste visible sur TOUTE arme débloquée, sinon on ne peut jamais en changer */
+  mark.style.cssText='cursor:pointer;font-size:16px;line-height:1;color:'+(isStart?'#ffd65a':'#6d7f8c');
   mark.onclick=e=>{e.stopPropagation();if(!save.own[i])return;save.start=i;saveGame();updateArmoryUI()};
   b.appendChild(mark);b.appendChild(document.createTextNode(w.n));b.appendChild(st);
   b.onclick=()=>{armSel=i;updateArmoryUI()};wg.appendChild(b)});
@@ -743,7 +747,7 @@ $('armStats').innerHTML=rows.map(r=>'<div class="armStatRow"><span>'+r[0]+'</spa
    +'<br>Silencieux : '+si.n+' — '+SIL_DESC[ARM[armSel].sil]+'</p>';
  const sb=$('armSetStart');sb.textContent=armSel===save.start?'★ Arme de départ sélectionnée':'Définir comme arme de départ';
   sb.disabled=!save.own[armSel];
-  sb.onclick=()=>{save.start=armSel;saveGame();$('armMsg').textContent='✔ Tu commenceras la prochaine partie avec '+w.n+'.';updateArmoryUI()};
+  sb.onclick=()=>{save.start=armSel;saveGame();$('armMsg').textContent='✔ Tu commenceras la prochaine partie avec '+W[armSel].n+'.';updateArmoryUI()};
 }
 const GM={poly:new R.MeshStandardMaterial({color:0x23281f,roughness:.72,metalness:.25,envMapIntensity:.5}),
  black:new R.MeshStandardMaterial({color:0x111316,roughness:.45,metalness:.8,envMapIntensity:.7}),
