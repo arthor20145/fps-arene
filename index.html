@@ -12,7 +12,16 @@ canvas{display:block}
 #vgn{position:absolute;inset:0;background:radial-gradient(circle,transparent 55%,rgba(0,0,0,.45))}
 #bb{position:absolute;left:50%;top:14px;width:360px;margin-left:-180px;height:14px;background:rgba(0,0,0,.6);border:1px solid #c33;display:none}
 #bbf{height:100%;width:100%;background:#c22}
-#scope{position:absolute;inset:0;display:none;background:linear-gradient(#000,#000) center/1px 56vmin no-repeat,linear-gradient(#000,#000) center/56vmin 1px no-repeat,radial-gradient(circle,transparent 27.5vmin,#000 28vmin)}
+/* overlay de visée : fond noir autour d'un cercle transparent (lame de visée) */
+#scope{position:absolute;inset:0;display:none;
+ background:radial-gradient(circle at 50% 50%,transparent 0 var(--sw,28vmin),#000 calc(var(--sw,28vmin) + .6vmin))}
+/* cercle de visée + réticule, dimensionné en JS selon le viseur */
+#scopeT{position:absolute;inset:0;pointer-events:none;display:none}
+#scopeR{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+ border:2px solid rgba(0,0,0,.9);box-shadow:0 0 0 2px rgba(255,255,255,.12),inset 0 0 40px rgba(0,0,0,.85)}
+#scopeDot{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#ff3b30;box-shadow:0 0 4px #000}
+#scopeLineV{position:absolute;left:50%;top:50%;width:1px;background:rgba(0,0,0,.85);transform:translate(-50%,-50%)}
+#scopeLineH{position:absolute;left:50%;top:50%;height:1px;background:rgba(0,0,0,.85);transform:translate(-50%,-50%)}
 #vig{position:absolute;inset:0;box-shadow:inset 0 0 150px 34px rgba(170,0,0,.8);opacity:0}
 #hurtfx{position:absolute;inset:0;opacity:0;box-shadow:inset 0 0 120px 24px rgba(150,0,0,.75)}
 #dmg{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0}
@@ -137,7 +146,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 <div id="err" style="display:none;position:fixed;left:8px;bottom:8px;max-width:70vw;background:rgba(120,0,0,.9);color:#fff;font:12px monospace;padding:6px;z-index:99;white-space:pre-wrap"></div>
 <div id="hud">
  <div class="cb" id="ct"></div><div class="cb" id="cb2"></div><div class="cb" id="cl"></div><div class="cb" id="cr"></div><div id="cdot"></div>
- <div id="vgn"></div><div id="scope"></div><div id="hm">✕</div><div id="hitm"></div><div id="vig"></div><div id="dmg"><i></i></div>
+ <div id="vgn"></div><div id="scope"></div><div id="scopeT"><div id="scopeR"></div><div id="scopeDot"></div><div id="scopeLineV"></div><div id="scopeLineH"></div></div><div id="hm">✕</div><div id="hitm"></div><div id="vig"></div><div id="dmg"><i></i></div>
  <div id="cine"></div><div id="scanl"></div><div id="hurtfx"></div><div id="flashfx"></div>
  <canvas id="radar" width="120" height="120"></canvas>
  <div id="info"><div id="sc"></div><div id="pt"></div><div id="wv"></div><div id="en"></div><div id="ks"></div></div>
@@ -1102,7 +1111,21 @@ function hud(dt,gap){const set=(id,x,y)=>$(id).style.transform=`translate(${x},$
   $('hp').style.width=Math.max(0,Math.min(100,P.hp/P.maxHp*100))+'%';
   $('stam').style.width=Math.max(0,Math.min(100,stam))*'%';
   $('am').textContent=A[cur].ammo+' / '+A[cur].res;$('wn').textContent=W[cur].n+(reload>0?' — RECHARGEMENT':'')+(adsT>.8?' — VISÉE':'')+'  |  Grenades: '+gren;
-  $('scope').style.display=cur==3&&adsT>.85?'block':'none';pivot.visible=!(cur==3&&adsT>.85);
+  /* --- visée : overlay selon le viseur équipé --- */
+ const sc=ARM[cur].scope;
+ const scoped=scopeOn(cur)&&adsT>.85;
+ $('scope').style.display=scoped?'block':'none';
+ $('scopeT').style.display=scoped?'block':'none';
+ pivot.visible=!scoped;
+ if(scoped){
+  const sw={x4:22,x2:30,holo:34,red:36}[sc]||36;
+  const r0=sw+'vmin';$('scope').style.setProperty('--sw',r0);
+  $('scopeR').style.width=r0;$('scopeR').style.height=r0;
+  const cross=(sc==='x4'||sc==='x2');
+  $('scopeDot').style.display=cross?'block':'none';
+  $('scopeLineV').style.display=cross?'block':'none';$('scopeLineH').style.display=cross?'block':'none';
+  if(cross){$('scopeLineV').style.height=r0;$('scopeLineH').style.width=r0}
+ }
   $('ks').textContent='Série x'+P.streak+(uav>0?' · UAV '+Math.ceil(uav)+'s':'')+(rage>0?' · RAGE '+Math.ceil(rage)+'s':'')+(strikes?' · [F] Frappe x'+strikes:'');
  const bo=enemies.find(e=>e.boss&&!e.dead);$('bb').style.display=bo?'block':'none';if(bo)$('bbf').style.width=Math.max(0,Math.min(100,bo.hp/18))+'%';
  const al=enemies.filter(e=>!e.dead).length;$('sc').textContent='Score '+P.score;$('pt').textContent='Points '+P.points;$('wv').textContent=mp?'ONLINE · '+(remote.size+1)+' joueurs':'Vague '+wave;$('en').textContent=mp?board():'Ennemis '+(al+toSpawn);
@@ -1129,7 +1152,10 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
  P.pitch=Math.max(-1.5,Math.min(1.5,P.pitch));P.hh+=((crouch?1.1:1.7)-P.hh)*Math.min(1,dt*10);
  const hs=Math.hypot(P.vel.x,P.vel.z);if(P.ground&&hs>1){bobT+=dt*hs*1.6;const st=Math.floor(bobT/Math.PI);if(st!==lastStep){lastStep=st;sfx.step()}}
  const bob=Math.sin(bobT)*.035*(P.ground?1:0);cam.position.set(P.pos.x,P.pos.y+P.hh+bob,P.pos.z);cam.rotation.set(P.pitch+(rnd()-.5)*shake*.06,P.yaw+(rnd()-.5)*shake*.06,0,'YXZ');
- adsT+=((ads?1:0)-adsT)*Math.min(1,dt*10);cam.fov=75-((W[cur].az==null?25:W[cur].az)+addAz(cur))*adsT;cam.updateProjectionMatrix();
+ adsT+=((ads?1:0)-adsT)*Math.min(1,dt*10);
+ /* l'AWP intègre déjà son propre grossissement : on n'ajoute pas celui de l'accessoire par-dessus */
+ const azEff=(W[cur].az==null?25:W[cur].az)+(cur==3?0:addAz(cur));
+ cam.fov=Math.max(8,75-azEff*adsT);cam.updateProjectionMatrix();
   kick=Math.max(0,kick-dt*8);heat=Math.max(0,heat-dt*.05);uav=Math.max(0,uav-dt);rage=Math.max(0,rage-dt);shake=Math.max(0,shake-dt*2);
   const sprintPose=sprint?1:0;sprintA+=(sprintPose-sprintA)*Math.min(1,dt*9);
   swayX*=Math.exp(-dt*7);swayY*=Math.exp(-dt*7);
