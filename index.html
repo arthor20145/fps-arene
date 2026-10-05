@@ -110,6 +110,26 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 .keyGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;text-align:left;font-size:14px;opacity:.85;margin-top:10px}
 .keyGrid kbd{display:inline-block;min-width:26px;text-align:center;background:#1b2228;border:1px solid #456;border-bottom-width:2px;border-radius:4px;padding:1px 6px;font:12px/1.5 monospace;color:#cfe3ff;margin-right:6px}
 #diffNote{font-size:14px;opacity:.75;margin-top:8px;text-align:left}
+
+#armory{display:none;background:rgba(0,0,0,.88);z-index:26;cursor:default}
+#armoryPanel{width:min(880px,94vw);max-height:92vh;overflow:auto;background:rgba(12,16,20,.98);border:2px solid #7c4;box-shadow:0 0 40px rgba(0,0,0,.8);padding:22px 26px;box-sizing:border-box}
+#armoryPanel h1{margin:0;font-size:40px;letter-spacing:4px}
+#armPoints{color:#ffd65a;font-size:20px;margin:6px 0 14px}
+.armWeapons{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.armWeapons button{margin:0;padding:9px 6px;font-size:15px;background:#1b2228;color:#cfe3ff;border:1px solid #456;display:flex;flex-direction:column;gap:3px}
+.armWeapons button small{font-size:10px;opacity:.7;font-weight:normal}
+.armWeapons button.on{background:#7c4;color:#111;border-color:#7c4}
+.armWeapons button:disabled{opacity:.35;cursor:not-allowed}
+.attRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.attRow button{margin:0;padding:10px 8px;font-size:15px;background:#1b2228;color:#cfe3ff;border:1px solid #456;display:flex;flex-direction:column;align-items:center;gap:3px}
+.attRow button small{font-size:11px;font-weight:normal;opacity:.65}
+.attRow button.on{background:#7c4;color:#111;border-color:#7c4}
+.attRow button.on small{opacity:.8}
+.attRow button:disabled{opacity:.35;cursor:not-allowed}
+.armStatRow{display:flex;justify-content:space-between;font-size:14px;padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.07)}
+.armStatRow b{color:#9fe07a;font-weight:normal}
+.armStatRow i{font-style:normal;opacity:.55;font-size:12px}
+#armoryClose{background:#888;margin-top:16px}
 </style></head><body>
 <div id="err" style="display:none;position:fixed;left:8px;bottom:8px;max-width:70vw;background:rgba(120,0,0,.9);color:#fff;font:12px monospace;padding:6px;z-index:99;white-space:pre-wrap"></div>
 <div id="hud">
@@ -147,6 +167,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  <button id="playBtn">&#9654; LANCER LA PARTIE</button>
 
  <div class="menuFoot">
+  <button id="menuArmory">&#128295; Armurerie</button>
   <button id="menuSettings">&#9881; Paramètres</button>
   <button id="menuHelp">&#128273; Commandes</button>
  </div>
@@ -168,6 +189,13 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 <div class="setting"><label class="chk"><input type="checkbox" id="fxExtra" checked> Détail décoratif (sacs, pneus, cônes…)</label></div>
 <button id="settingsBack">Retour à la pause</button></div></div>
 <div class="ov" id="shop"><div id="shopPanel"><h1>🛒 SHOP</h1><div id="shopPoints">Points : 0</div><div class="shopGrid" id="shopGrid"></div><button id="shopClose">Fermer (B / Échap)</button></div></div>
+<div class="ov" id="armory"><div id="armoryPanel"><h1>🔧 ARMURERIE</h1><div id="armPoints">Points : 0</div>
+ <div class="mgroup"><span class="mtitle">Arme</span><div class="armWeapons" id="armWeapons"></div></div>
+ <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
+ <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
+ <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
+ <div class="mgroup"><span class="mtitle">Aperçu des stats</span><div id="armStats"></div></div>
+ <button id="armoryClose">Fermer (retour au menu)</button><button id="armSetStart">Définir comme arme de départ</button></div></div>
 <div class="ov" id="cheat"><div id="cheatPanel"><h1>🧪 PANNEAU DE CHEATS</h1><div id="cheatStatus"></div><div id="cheatList"></div><button id="cheatClose">Fermer (Échap)</button></div></div>
 <div class="ov" id="over"><h1>GAME OVER</h1><p id="fs"></p><button id="again">Rejouer</button><button id="backMenu" style="background:#888">Changer de mode / difficulté</button></div>
 <script>window.onerror=function(m,s,l){var d=document.getElementById('err');d.style.display='block';d.textContent='Erreur JS : '+m+' (ligne '+l+')'}
@@ -516,6 +544,8 @@ function setupMenu(){
   $('menuHelp').onclick=()=>{const g=$('keyGrid');
     if(g.style.display==='none'){g.innerHTML=CONTROLS.map(c=>'<div><kbd>'+c[0]+'</kbd>'+c[1]+'</div>').join('');g.style.display='grid'}else g.style.display='none'};
   $('menuSettings').onclick=e=>{e.stopPropagation();$('menu').style.display='none';$('settings').style.display='flex'};
+  $('menuArmory').onclick=e=>{e.stopPropagation();armoryOpen()};
+  $('armoryClose').onclick=e=>{e.stopPropagation();armoryClose()};
   $('playBtn').onclick=e=>{e.stopPropagation();mp=(wantMp&&!!room);newGame();lock()};
 }
 
@@ -531,8 +561,8 @@ function noise(d,v,f,ty='lowpass',pan){if(!AC)return;const s=AC.createBufferSour
  s.buffer=NB;fl.type=ty;fl.frequency.value=f;g.gain.setValueAtTime(Math.max(.0002,v),t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(fl);fl.connect(g);g.connect(out(pan));s.start(0,rnd(),d)}
 function tone(f,d,v,ty='square',sl,pan){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=ty;o.frequency.setValueAtTime(f,t);
  if(sl)o.frequency.exponentialRampToValueAtTime(Math.max(20,sl),t+d);g.gain.setValueAtTime(Math.max(.0002,v),t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(out(pan));o.start();o.stop(t+d)}
-const sfx={shot:i=>{if(i==4){noise(.07,.55,2400);tone(150,.05,.28,'sawtooth',60);tone(60,.09,.2,'square',30);return}
-   noise(i>1?.32:.15,.62,i==2?900:i?2500:1800);tone(i==3?70:i==2?60:i?180:120,i>1?.28:.1,.42,'sawtooth',30)},
+const sfx={shot:(i,loud)=>{loud=loud==null?1:loud;if(i==4){noise(.07,.55*loud,2400);tone(150,.05,.28*loud,'sawtooth',60);tone(60,.09,.2*loud,'square',30);return}
+   noise(i>1?.32:.15,.62*loud,i==2?900:i?2500:1800);tone(i==3?70:i==2?60:i?180:120,i>1?.28:.1,.42*loud,'sawtooth',30)},
   reload:()=>{noise(.04,.3,3000,'highpass');setTimeout(()=>tone(600,.06,.15),600);setTimeout(()=>noise(.05,.3,3000,'highpass'),1100);setTimeout(()=>tone(300,.05,.12),1250)},
   step:()=>{noise(.06,.12,400);noise(.04,.07,1600,'highpass')},imp:d=>{noise(.07,.28,2600,'bandpass',0);if(d>3)noise(.05,.1,900)},
   hit:()=>tone(1400,.04,.1,'sine'),crit:()=>{tone(2100,.05,.14,'sine');tone(1400,.08,.09,'sine',900)},
@@ -650,6 +680,64 @@ function buyShop(id){if(state!=='shop'||shopStock[id]<=0)return;const price=shop
  if(id==='hp'){P.maxHp+=25;P.hp+=25}else if(id==='ammo'){for(let i=0;i<W.length;i++)if(owned[i])A[i].res+=60}else if(id==='reload'){P.reloadMul*=.85}else if(id==='damage'){P.damageMul*=1.10}else if(id==='speed'){P.speedMul*=1.08}
  updateShopUI()}
 function updateShopUI(){const pts=$('shopPoints');if(!pts)return;pts.textContent='Points : '+P.points;const g=$('shopGrid');g.innerHTML='';Object.keys(SHOP_CFG).forEach(id=>{const c=SHOP_CFG[id],left=shopStock[id],price=shopPrice(id);const d=document.createElement('div');d.className='shopItem';d.innerHTML='<h3>'+c.label+'</h3><p>'+c.desc+'</p><p>Prix : <b>'+price+'</b> points · Stock : '+left+'/'+SHOP_MAX[id]+'</p>';const b=document.createElement('button');b.textContent=left<=0?'ÉPUISÉ':'Acheter';b.disabled=left<=0||P.points<price;b.onclick=()=>buyShop(id);d.appendChild(b);g.appendChild(d)})}
+/* ================= SAUVEGARDE PERSISTANTE (armurerie) ================= */
+const SAVE_KEY='fps-arene-v1';
+let save={bank:0,own:[true,true,false,false,false,true],start:1,arm:{}};
+try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(s&&s.own&&s.arm)save=Object.assign(save,s)}catch(e){}
+function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+/* ================= ARMURERIE (viseurs / silencieux) ================= */
+let armSel=1;
+const SCOPE_LIST=['none','iron','red','holo','x2','x4'],SIL_LIST=['none','short','long'];
+const SCOPE_DESC={none:'Aucune lentille',iron:'Grails de base',red:'Réticule point rouge, +4° de zoom',holo:'Cercle holographique, +6° de zoom',x2:'Grossissement 2x, +12° de zoom',x4:'Grossissement 4x, +26° de zoom'};
+const SIL_DESC={none:'Bruit normal',short:'−18% de recul, −4% de dégâts, −58% de bruit',long:'−38% de recul, −10% de dégâts, −78% de bruit'};
+/* l'armurerie est accessible UNIQUEMENT depuis le menu de démarrage */
+function armoryOpen(){armSel=1;$('menu').style.display='none';$('armory').style.display='flex';updateArmoryUI()}
+function armoryClose(){$('armory').style.display='none';$('menu').style.display='flex'}
+function setAtt(kind,key){ARM[armSel][kind]=key;save.arm[armSel]={scope:ARM[armSel].scope,sil:ARM[armSel].sil};saveGame();refreshAtt();updateArmoryUI()}
+function updateArmoryUI(){
+ $('armPoints').textContent='Solde : '+save.bank+' pts';
+ const wg=$('armWeapons');wg.innerHTML='';
+ W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
+  b.innerHTML=w.n+'<small>'+(save.own[i]?(i===save.start?'★ arme de départ':'disponible'):'🔒 verrouillée')+'</small>';
+  b.onclick=()=>{armSel=i;updateArmoryUI()};wg.appendChild(b)});
+ const mk=(host,list,cfg,cur,kind)=>{const g=$(host);g.innerHTML='';
+  list.forEach(k=>{const c=cfg[k],own=k===cur,b=document.createElement('button');
+   b.className=own?'on':'';b.disabled=!save.own[armSel]||(k!=='none'&&k!=='iron'&&!equipOwn(kind,armSel,k)&&save.bank<c.cost);
+   b.innerHTML=c.n+'<small>'+(c.cost?c.cost+' pts':'gratuit')+'</small>';
+   b.onclick=()=>setAtt(kind,k);g.appendChild(b)})};
+ /* si l'accessoire n'est pas encore acheté, le bouton l'achète (déduit les points) */
+ function buyAttRow(host,kind){const cfg=kind==='scope'?OPT_SCOPE:OPT_SIL;
+  $(host).querySelectorAll('button').forEach((b,idx)=>{const k=(kind==='scope'?SCOPE_LIST:SIL_LIST)[idx],c=cfg[k];
+   if(k==='none'||k==='iron'||equipOwn(kind,armSel,k))return;
+   b.querySelector('small').textContent=c.cost+' pts · Acheter';
+   b.onclick=()=>buyAtt(kind,k)})}
+ /* un accessoire acheté reste sur l'arme même si tu en changes */
+ const boughtAtt=save.bought||(save.bought={});
+ function equipOwn(kind,i,k){return!!boughtAtt[i+kind+k]}
+ function buyAtt(kind,key){const c=(kind==='scope'?OPT_SCOPE:OPT_SIL)[key];
+  if(!save.own[armSel]||ARM[armSel][kind]===key)return;
+  if(save.bank<c.cost){$('armMsg').textContent='❌ Pas assez de points (il te manque '+(c.cost-save.bank)+').';return}
+  save.bank-=c.cost;boughtAtt[armSel+kind+key]=true;ARM[armSel][kind]=key;
+  save.arm[armSel]={scope:ARM[armSel].scope,sil:ARM[armSel].sil};saveGame();refreshAtt();sfx.hit();
+  $('armMsg').textContent='✔ '+c.n+' équipé sur '+W[armSel].n+'.';updateArmoryUI()}
+ mk('optScope',SCOPE_LIST,OPT_SCOPE,ARM[armSel].scope,'scope');
+ mk('optSil',SIL_LIST,OPT_SIL,ARM[armSel].sil,'sil');
+ buyAttRow('optScope','scope');buyAttRow('optSil','sil');
+ const w=W[armSel],sc=hasScope(armSel),si=hasSil(armSel);
+ const rows=[['Dégâts par balle',Math.round(w.dmg*si.dmg),Math.round(w.dmg)],
+  ['Cadence',(w.rate*si.rate).toFixed(2)+' s','<i>'+w.rate+' s</i>'],
+  ['Recul',Math.round(w.rec*si.rec*1000)/1000,Math.round(w.rec*1000)/1000],
+  ['Zoom en visée',(w.az+sc.az)+'°',(w.az)+'°'],
+  ['Dispersion',Math.round(sc.spr*100)+'%','<i>100%</i>'],
+  ['Bruit',Math.round(si.loud*100)+'%','<i>100%</i>'],
+  ['Chargeur',w.mag+' ('+A[armSel].ammo+' / '+A[armSel].res+')','']];
+$('armStats').innerHTML=rows.map(r=>'<div class="armStatRow"><span>'+r[0]+'</span><b>'+r[1]+'</b><i>'+r[2]+'</i></div>').join('')
+   +'<p style="font-size:13px;opacity:.65;margin-top:10px">Viseur : '+sc.n+' — '+SCOPE_DESC[ARM[armSel].scope]
+   +'<br>Silencieux : '+si.n+' — '+SIL_DESC[ARM[armSel].sil]+'</p>';
+ const sb=$('armSetStart');sb.textContent=armSel===save.start?'★ Arme de départ sélectionnée':'Définir comme arme de départ';
+  sb.disabled=!save.own[armSel];
+  sb.onclick=()=>{save.start=armSel;saveGame();$('armMsg').textContent='✔ Tu commenceras la prochaine partie avec '+w.n+'.';updateArmoryUI()};
+}
 const GM={poly:new R.MeshStandardMaterial({color:0x23281f,roughness:.72,metalness:.25,envMapIntensity:.5}),
  black:new R.MeshStandardMaterial({color:0x111316,roughness:.45,metalness:.8,envMapIntensity:.7}),
  steel:new R.MeshStandardMaterial({color:0x8b9199,roughness:.34,metalness:1,envMapIntensity:1.1}),
@@ -710,6 +798,57 @@ const pivot=new R.Group(),tip=[[0,.012,-.62],[0,.03,-.3],[0,.035,-1.3],[0,.05,-1
 /* position de visée : reculée pour que la crosse reste devant la caméra */
 const ADS_CFG=[{x:0,y:-.062,z:-.80},{x:0,y:-.05,z:-.52},{x:0,y:-.06,z:-.64},{x:0,y:-.115,z:-.92},{x:.13,y:-.14,z:-.95},{x:0,y:-.02,z:-.52}];
 ADS_CFG.forEach((a,i)=>{W[i].ads=a;W[i].az=i===3?58:i===4?16:25});
+/* ---- géométrie des accessoires (visée + silencieux) par arme ---- */
+const MUZ=[{y:.014,z:-.87,r:.023},{y:.012,z:-.30,r:.018},{y:.02,z:-1.18,r:.035},{y:.02,z:-1.68,r:.03},{y:.02,z:-.99,r:.05},{y:.02,z:-.62,r:.02}];
+const SIGHT=[{y:.075,z:.02},{y:.062,z:-.02},{y:.075,z:.02},{y:.16,z:-.30},{y:.115,z:-.05},{y:0,z:0}];
+const silMat=new R.MeshStandardMaterial({color:0x14171a,roughness:.55,metalness:.7,envMapIntensity:.7});
+const lensMat=new R.MeshBasicMaterial({color:0x2a4a66,transparent:true,opacity:.55});
+const dotMat=new R.MeshBasicMaterial({color:0xff3b30});
+const attScope=[],attSil=[];
+for(let i=0;i<6;i++){
+  /* --- viseur : corps + lentille + réticule --- */
+  const s=new R.Group();const sz=SIGHT[i];
+  if(i!==5){
+   gc(s,.026,.026,.09,GM.black,0,sz.y,sz.z,Math.PI/2);
+   gc(s,.022,.022,.012,lensMat,0,sz.y,sz.z-.05,Math.PI/2);
+   gc(s,.009,.009,.006,dotMat,0,sz.y,sz.z-.052,Math.PI/2);
+   gp(s,.014,.014,.05,GM.black,0,sz.y-.02,sz.z); /* rail */
+   gc(s,.03,.03,.02,GM.steel,.045,sz.y,sz.z+.01,Math.PI/2); /* molette */
+  }
+  s.visible=false;guns[i].add(s);attScope[i]=s;
+  /* --- silencieux : tube + bouchon --- */
+  const b=new R.Group();const mz=MUZ[i];
+  if(i!==5){
+   gc(b,mz.r*1.15,mz.r*1.15,.17,silMat,0,mz.y,mz.z-.09,Math.PI/2);
+   gc(b,mz.r*1.2,mz.r*1.2,.02,GM.black,0,mz.y,mz.z-.18,Math.PI/2);
+   for(let k=0;k<4;k++)gc(b,mz.r*1.22,mz.r*1.22,.008,GM.black,0,mz.y,mz.z-.04-k*.04,Math.PI/2);
+  }
+  b.visible=false;guns[i].add(b);attSil[i]=b;
+}
+function refreshAtt(){for(let i=0;i<6;i++){attScope[i].visible=scopeOn(i);attSil[i].visible=ARM[i].sil!=='none'}}
+/* ================= ARMURERIE : VISEURS & SILENCIEUX =================
+   Chaque arme peut porter 1 viseur et 1 silencieux (indépendants).
+   Les effets sont réellement appliqués au tir : recul, dispersion, dégâts, cadence, zoom. */
+const OPT_SCOPE={
+ none:{n:'Aucun',cost:0,az:0,spr:1},
+ iron:{n:'Grails',cost:0,az:0,spr:1},
+ red:{n:'Point rouge',cost:220,az:4,spr:.92},
+ holo:{n:'Holo',cost:320,az:6,spr:.86},
+ x2:{n:'Lunette 2x',cost:520,az:12,spr:.72},
+ x4:{n:'Lunette 4x',cost:900,az:26,spr:.55}};
+const OPT_SIL={
+ none:{n:'Aucun',cost:0,rec:1,dmg:1,rate:1,loud:1},
+ short:{n:'Silencieux court',cost:300,rec:.82,dmg:.96,rate:1.03,loud:.42},
+ long:{n:'Silencieux long',cost:640,rec:.62,dmg:.9,rate:1.07,loud:.22}};
+const ARM={}; /* ARM[i]={scope:'none',sil:'none'} */
+W.forEach((w,i)=>{ARM[i]={scope:w.knife?'none':(i===3?'x4':'iron'),sil:'none'};
+ if(save.arm[i])ARM[i]=Object.assign(ARM[i],save.arm[i])});
+const hasScope=i=>OPT_SCOPE[ARM[i].scope],hasSil=i=>OPT_SIL[ARM[i].sil];
+/* stats effectives de l'arme équipée (multiplicateurs) */
+const mulRec=i=>hasSil(i).rec, mulDmg=i=>hasSil(i).dmg, mulRate=i=>hasSil(i).rate;
+const mulSpr=i=>hasScope(i).spr, addAz=i=>hasScope(i).az;
+function scopeOn(i){return ARM[i].scope!=='none'&&ARM[i].scope!=='iron'}
+refreshAtt();
 const flashTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g2=c.getContext('2d');
  const rg=g2.createRadialGradient(64,64,0,64,64,64);rg.addColorStop(0,'rgba(255,255,240,1)');rg.addColorStop(.25,'rgba(255,215,140,.85)');rg.addColorStop(1,'rgba(255,160,60,0)');
  g2.fillStyle=rg;g2.fillRect(0,0,128,128);g2.globalCompositeOperation='lighter';
@@ -726,10 +865,10 @@ function muzzleFx(){flashT=.055;fll.intensity=2.4;fl.material.rotation=rnd()*6.2
 function startReload(){const w=W[cur],a=A[cur];if(w.knife||reload>0||a.ammo>=w.mag||a.res<=0)return;reload=w.rl*P.reloadMul;sfx.reload()}
 const ray=new R.Raycaster(),v1=new R.Vector3(),v2=new R.Vector3(),enemies=[],picks=[];
 function tryShoot(){if(reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cur];if(!w.knife&&a.ammo<=0){startReload();return}
- if(!w.knife)a.ammo--;nextShot=T+w.rate;fired=1;
- if(w.knife){sfx.imp();}else{sfx.shot(cur);}
+ if(!w.knife)a.ammo--;nextShot=T+w.rate*mulRate(cur);fired=1;
+ if(w.knife){sfx.imp();}else{sfx.shot(cur,hasSil(cur).loud);}
  if(mp)room.emit('shot',{w:cur});
-  const dm=w.dmg*P.damageMul*(rage>0?2:1)*(cheats.oneShot?2:1);
+  const dm=w.dmg*P.damageMul*mulDmg(cur)*(rage>0?2:1)*(cheats.oneShot?2:1);
  if(w.knife){
    const forward=new R.Vector3(0,0,-1).applyQuaternion(cam.quaternion); forward.y=0; forward.normalize();
    let best=null,bestDist=3.0;
@@ -749,7 +888,7 @@ function tryShoot(){if(reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cu
       if(best.hp<=0)kill(best,hs);
     }else{sfx.imp()}
   }else{
-    const mv=P.vel.length()>1,ads=adsT>.5,sp=(w.spr*(mv?2:1)*(ads?.4:1)*(P.hh<1.4?.7:1))+heat+(cur==3&&!ads?.04:0);
+    const mv=P.vel.length()>1,ads=adsT>.5,sp=(w.spr*mulSpr(cur)*(mv?2:1)*(ads?.4:1)*(P.hh<1.4?.7:1))+heat+(cur==3&&!ads?.04:0);
     muzzleFx();ejectShell();
     cam.getWorldPosition(v1);const mw=new R.Vector3();fl.getWorldPosition(mw);
     const tg=bm.slice();enemies.forEach(e=>{if(!e.dead)tg.push(...e.parts)});if(mp)remote.forEach(r=>{if(r.g.visible)tg.push(...r.parts)});const np=w.pel||1;
@@ -767,7 +906,7 @@ function tryShoot(){if(reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cu
         else{impactFx(h.point,n)}
       }
     }
-    P.pitch+=w.rec*(ads?.6:1);P.yaw+=(rnd()-.5)*w.rec*.6;heat=Math.min(.05,heat+w.rec*.25);
+    P.pitch+=w.rec*mulRec(cur)*(ads?.6:1);P.yaw+=(rnd()-.5)*w.rec*mulRec(cur)*.6;heat=Math.min(.05,heat+w.rec*mulRec(cur)*.25);
   }
   kick=Math.min(1,kick+.5)}
 function hitMark(crit){const h=$('hm');h.style.opacity=1;h.style.color=crit?'#ffd447':'#fff';h.style.transform=`translate(-50%,-50%) scale(${crit?1.35:1.1})`;h.dataset.t=.25;
@@ -942,7 +1081,7 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
  P.pitch=Math.max(-1.5,Math.min(1.5,P.pitch));P.hh+=((crouch?1.1:1.7)-P.hh)*Math.min(1,dt*10);
  const hs=Math.hypot(P.vel.x,P.vel.z);if(P.ground&&hs>1){bobT+=dt*hs*1.6;const st=Math.floor(bobT/Math.PI);if(st!==lastStep){lastStep=st;sfx.step()}}
  const bob=Math.sin(bobT)*.035*(P.ground?1:0);cam.position.set(P.pos.x,P.pos.y+P.hh+bob,P.pos.z);cam.rotation.set(P.pitch+(rnd()-.5)*shake*.06,P.yaw+(rnd()-.5)*shake*.06,0,'YXZ');
- adsT+=((ads?1:0)-adsT)*Math.min(1,dt*10);cam.fov=75-(W[cur].az==null?25:W[cur].az)*adsT;cam.updateProjectionMatrix();
+ adsT+=((ads?1:0)-adsT)*Math.min(1,dt*10);cam.fov=75-((W[cur].az==null?25:W[cur].az)+addAz(cur))*adsT;cam.updateProjectionMatrix();
   kick=Math.max(0,kick-dt*8);heat=Math.max(0,heat-dt*.05);uav=Math.max(0,uav-dt);rage=Math.max(0,rage-dt);shake=Math.max(0,shake-dt*2);
   const sprintPose=sprint?1:0;sprintA+=(sprintPose-sprintA)*Math.min(1,dt*9);
   swayX*=Math.exp(-dt*7);swayY*=Math.exp(-dt*7);
@@ -961,7 +1100,7 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
  /* ennemis, ramassages, particules, vagues */
  enemies.forEach(e=>updEnemy(e,dt));for(let i=enemies.length-1;i>=0;i--)if(enemies[i].rm)enemies.splice(i,1);
  for(let i=picks.length-1;i>=0;i--){const q=picks[i];q.m.rotation.y+=dt*2;q.l-=dt;
-  if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;owned[wi]=true;if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+([2,3,4,5,6][Math.max(0,[0,2,3,4,5].indexOf(wi))]||6),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
+  if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;owned[wi]=true;save.own[wi]=true;saveGame();if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+([2,3,4,5,6][Math.max(0,[0,2,3,4,5].indexOf(wi))]||6),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
   if(q.l<=0||Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){scene.remove(q.m);picks.splice(i,1)}}
  updParts(dt);updFX(dt);updGren(dt);const alive=enemies.filter(e=>!e.dead).length;
   if(wt>0){wt-=dt;if(wt<=0)startWave()}
@@ -971,7 +1110,9 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
   else if(alive==0){wt=4;P.score+=200;P.hp=Math.min(P.maxHp,P.hp+25);refill();banner('VAGUE '+wave+' TERMINÉE',2.5,40);killfeed('✔ VAGUE '+wave+' NETTOYÉE  +'+200,'#6cc7ff')}
  hud(dt,5+(w=>{const mv=hs>1?2:1;return(w.spr*mv*(adsT>.5?.4:1)+heat)*700})(W[cur]));
  if(P.hp<=0&&!mp){state='over';$('shop').style.display='none';document.exitPointerLock();
-  $('fs').innerHTML='<span style="color:#ff4b3e;font-size:34px;letter-spacing:4px">ÉLIMINÉ</span><br><br>Difficulté : <b>'+DF.n+'</b><br>Score : <b>'+P.score+'</b><br>Vague atteinte : <b>'+wave+'</b><br>Éliminations : <b>'+P.streak+'</b>';
+  /* les points non dépensés au shop sont mis de côté pour l'armurerie */
+  save.bank+=P.points;saveGame();
+  $('fs').innerHTML='<span style="color:#ff4b3e;font-size:34px;letter-spacing:4px">ÉLIMINÉ</span><br><br>Difficulté : <b>'+DF.n+'</b><br>Score : <b>'+P.score+'</b><br>Vague atteinte : <b>'+wave+'</b><br>Éliminations : <b>'+P.streak+'</b><br><br><span style="color:#ffd65a;font-size:15px">+'+P.points+' pts mis de côté pour l’armurerie (solde : '+save.bank+')</span>';
   $('over').style.display='flex';$('hud').style.display='none';$('hurtfx').style.opacity=.9;
   const mb=$('backMenu');
   mb.onclick=e=>{e.stopPropagation();$('over').style.display='none';$('menu').style.display='flex';state='menu'}}
@@ -982,8 +1123,12 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
  else renderer.render(scene,cam)}
 /* ================= ÉTAT & ENTRÉES ================= */
 function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.forEach(q=>scene.remove(q.m));picks.length=0;
- Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};owned=[false,true,false,false,false,true];bossDropIndex=0;hasMini=false;gren=3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
-  equip(1);swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
+ Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};
+ /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
+ owned=save.own.slice();owned[save.start]=true;owned[5]=true;
+ W.forEach((w,i)=>{if(owned[i]&&!w.knife)A[i]={ammo:w.mag,res:w.mag*4}});
+ A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
+  equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
   FXQ.tracers.concat(FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);$('kf').innerHTML='';$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
   ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
