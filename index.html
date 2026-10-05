@@ -684,6 +684,9 @@ function updateShopUI(){const pts=$('shopPoints');if(!pts)return;pts.textContent
 const SAVE_KEY='fps-arene-v1';
 let save={bank:0,own:[true,true,false,false,false,true],start:1,arm:{}};
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(s&&s.own&&s.arm)save=Object.assign(save,s)}catch(e){}
+if(typeof save.start!=='number'||save.start<0||save.start>=W.length)save.start=1;
+if(!Array.isArray(save.own)||save.own.length!==W.length)save.own=[true,true,false,false,false,true];
+if(!save.bought)save.bought={};
 function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
 /* ================= ARMURERIE (viseurs / silencieux) ================= */
 let armSel=1;
@@ -698,7 +701,11 @@ function updateArmoryUI(){
  $('armPoints').textContent='Solde : '+save.bank+' pts';
  const wg=$('armWeapons');wg.innerHTML='';
  W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
-  b.innerHTML=w.n+'<small>'+(save.own[i]?(i===save.start?'★ arme de départ':'disponible'):'🔒 verrouillée')+'</small>';
+  const st=document.createElement('small');st.textContent=!save.own[i]?'🔒 verrouillée':(i===save.start?'★ départ':'disponible');
+  const mark=document.createElement('span');mark.textContent='★';mark.title='Définir comme arme de départ';
+  mark.style.cssText='cursor:pointer;font-size:15px;color:#ffd65a;display:'+(i===save.start?'inline':'none');
+  mark.onclick=e=>{e.stopPropagation();if(!save.own[i])return;save.start=i;saveGame();updateArmoryUI()};
+  b.appendChild(mark);b.appendChild(document.createTextNode(w.n));b.appendChild(st);
   b.onclick=()=>{armSel=i;updateArmoryUI()};wg.appendChild(b)});
  const mk=(host,list,cfg,cur,kind)=>{const g=$(host);g.innerHTML='';
   list.forEach(k=>{const c=cfg[k],own=k===cur,b=document.createElement('button');
@@ -1125,7 +1132,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
 function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.forEach(q=>scene.remove(q.m));picks.length=0;
  Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};
  /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
- owned=save.own.slice();owned[save.start]=true;owned[5]=true;
+ owned=save.own.slice();owned[save.start]=true;owned[1]=true;owned[5]=true;
  W.forEach((w,i)=>{if(owned[i]&&!w.knife)A[i]={ammo:w.mag,res:w.mag*4}});
  A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
   equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
