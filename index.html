@@ -1143,8 +1143,11 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
  const scOn=scopeOn(cur),sz=SIGHT[cur];
  const ad0=W[cur].ads||{x:0,y:-.06,z:-.34};
  const adjY=scOn?-sz.y:0,adjZ=scOn?Math.min(-.10,sz.z*.55):0;
- const ad={x:ad0.x,y:ad0.y+adjY,z:ad0.z+adjZ};
- const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT),hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sprintA*.07,hipZ=-.35+kick*.06;
+ /* décalage vertical demandé, en pixels écran convertis en unités monde */
+ const WANT_PX=50;
+ const worldPerPx=(2*Math.tan(cam.fov*Math.PI/360)*Math.abs(pivot.position.z||.35))/innerHeight;
+ const ad={x:ad0.x,y:ad0.y+adjY+WANT_PX*worldPerPx,z:ad0.z+adjZ};
+ const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT),hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sprintA*.07+WANT_PX*worldPerPx,hipZ=-.35+kick*.06;
  pivot.position.set(hipX*(1-adsT)+ad.x*adsT,hipY*(1-adsT)+ad.y*adsT,hipZ*(1-adsT)+ad.z*adsT);
  /* en visée optique on fige le balancement pour que l'image reste nette */
  const steady=scOn&&adsT>.5?1:.45;
