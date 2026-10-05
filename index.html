@@ -7,7 +7,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:Arial
 canvas{display:block}
 #hud{position:fixed;inset:0;pointer-events:none;display:none}
 .cb{position:absolute;left:50%;top:50%;background:#fff;opacity:.85}
-#ct,#cb2{width:2px;height:8px}#cl,#cr{width:8px;height:2px}
+#ct,#cb2{width:2px;height:8px;margin-left:-1px}#cl,#cr{width:8px;height:2px;margin-top:-1px}
 #hm{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:34px;opacity:0;font-weight:bold}
 #vgn{position:absolute;inset:0;background:radial-gradient(circle,transparent 55%,rgba(0,0,0,.45))}
 #bb{position:absolute;left:50%;top:14px;width:360px;margin-left:-180px;height:14px;background:rgba(0,0,0,.6);border:1px solid #c33;display:none}
@@ -820,8 +820,8 @@ function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.
 let bnT=0,vig=0;const rc=$('radar').getContext('2d');
 function banner(t,d=2,s=44){const b=$('bn');b.textContent=t;b.style.fontSize=s+'px';b.style.opacity=1;bnT=d}
 function banner2(t,d=2){const b=$('banner2');b.textContent=t;b.style.opacity=1;b.dataset.t=d}
-function hud(dt,gap){const set=(id,x,y)=>$(id).style.transform=`translate(${x}px,${y}px)`;
-  set('ct',-1,-gap-8);set('cb2',-1,gap);set('cl',-gap-8,-1);set('cr',gap,-1);
+function hud(dt,gap){const set=(id,x,y)=>$(id).style.transform=`translate(${x},${y})`;
+  set('ct','0',`calc(-100% - ${gap}px)`);set('cb2','0',`${gap}px`);set('cl',`calc(-100% - ${gap}px)`,'0');set('cr',`${gap}px`,'0');
   const th=(adsT>.8?1:2)*(P.hh<1.4?1.4:1);$('ct').style.height=$('cb2').style.height=(7*th)+'px';$('cl').style.width=$('cr').style.width=(7*th)+'px';
   const cv=adsT>.8?0:.9;['ct','cb2','cl','cr'].forEach(i=>$(i).style.opacity=cv);
   $('cdot').style.opacity=adsT>.8?0:.9;
