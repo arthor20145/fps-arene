@@ -85,6 +85,31 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 .selrow button.on{background:#7c4;color:#111;border-color:#7c4}
 .chk{display:flex;align-items:center;gap:10px;font-size:17px}
 .chk input{width:20px;height:20px;accent-color:#7c4}
+
+#menu{cursor:default;background:radial-gradient(circle at 50% 35%,rgba(30,44,60,.85),rgba(0,0,0,.94))}
+#menuPanel{width:min(880px,94vw);max-height:92vh;overflow:auto;background:rgba(10,14,18,.96);border:2px solid #7c4;box-shadow:0 0 40px rgba(0,0,0,.8);padding:26px 28px;box-sizing:border-box}
+#menuPanel h1{margin:0;font-size:clamp(38px,7vw,68px);letter-spacing:8px;text-shadow:0 0 24px rgba(124,204,68,.35)}
+#menuTag{opacity:.7;letter-spacing:3px;font-size:14px;text-transform:uppercase;margin:2px 0 18px}
+.mgroup{margin:16px 0;text-align:left}
+.mgroup>.mtitle{display:block;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.65;margin-bottom:8px}
+.diffRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.diffRow button{margin:0;padding:10px 8px;font-size:16px;background:#1b2228;color:#cfe3ff;border:1px solid #456;display:flex;flex-direction:column;align-items:center;gap:2px}
+.diffRow button small{font-size:11px;font-weight:normal;opacity:.65;letter-spacing:0}
+.diffRow button.on{background:#7c4;color:#111;border-color:#7c4}
+.diffRow button.on small{opacity:.75}
+.diffRow button[data-d="hard"].on{background:#ff9b2a;border-color:#ff9b2a;color:#111}
+.diffRow button[data-d="expert"].on{background:#c33;border-color:#c33;color:#fff}
+.modeRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modeRow button{margin:0;font-size:19px;padding:14px 10px;background:#1b2228;color:#cfe3ff;border:1px solid #456}
+.modeRow button.on{background:#7c4;color:#111;border-color:#7c4}
+.modeRow button:disabled{opacity:.4;cursor:not-allowed}
+#playBtn{width:100%;font-size:26px;padding:16px;margin-top:18px;letter-spacing:3px;background:#7c4}
+#playBtn:disabled{opacity:.45;cursor:not-allowed}
+.menuFoot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.menuFoot button{margin:0;font-size:15px;padding:9px 18px;background:#1b2228;color:#cfe3ff;border:1px solid #456}
+.keyGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;text-align:left;font-size:14px;opacity:.85;margin-top:10px}
+.keyGrid kbd{display:inline-block;min-width:26px;text-align:center;background:#1b2228;border:1px solid #456;border-bottom-width:2px;border-radius:4px;padding:1px 6px;font:12px/1.5 monospace;color:#cfe3ff;margin-right:6px}
+#diffNote{font-size:14px;opacity:.75;margin-top:8px;text-align:left}
 </style></head><body>
 <div id="err" style="display:none;position:fixed;left:8px;bottom:8px;max-width:70vw;background:rgba(120,0,0,.9);color:#fff;font:12px monospace;padding:6px;z-index:99;white-space:pre-wrap"></div>
 <div id="hud">
@@ -97,10 +122,37 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  <div id="hpw"><div id="hp"></div></div><div id="stamw"><div id="stam"></div></div>
  <div id="bn"></div><div id="banner2"></div><div id="kf"></div><div id="bb"><div id="bbf"></div></div>
 </div>
-<div class="ov" id="menu"><h1>ARÈNE FPS</h1><p>Cliquer n'importe où pour jouer en solo (vagues)</p><button id="mpbtn" style="display:none">🌐 JOUER EN LIGNE (Deathmatch)</button><p id="mpn"></p><p id="dinfo"></p>
-<textarea id="dout" readonly rows="3" placeholder="Ton code (à envoyer à ton ami)"></textarea><button id="dcopy">Copier</button>
-<textarea id="din" rows="3" placeholder="Code de ton ami (à coller ici)" style="display:none"></textarea><button id="dok" style="display:none">Valider</button>
-<button id="dgo" style="display:none">▶ LANCER LE DUO</button><button id="dback" style="background:#888">Retour</button></div>
+<div class="ov" id="menu"><div id="menuPanel">
+ <h1>ARÈNE FPS</h1>
+ <p id="menuTag">Survie en vagues &middot; boss toutes les 5 vagues</p>
+
+ <div class="mgroup"><span class="mtitle">Mode de jeu</span>
+  <div class="modeRow">
+   <button id="modeSolo" class="on">&#127919; Solo &mdash; Vagues</button>
+   <button id="modeMp" disabled>&#127760; En ligne &mdash; Deathmatch</button>
+  </div>
+  <p id="mpn" style="margin:8px 2px 0;font-size:14px;opacity:.7"></p>
+ </div>
+
+ <div class="mgroup"><span class="mtitle">Difficulté</span>
+  <div class="diffRow" id="diffRow">
+   <button data-d="easy">&#128994; Facile<small>moins de PV ennemis</small></button>
+   <button data-d="normal" class="on">&#128308; Normal<small>équilibré</small></button>
+   <button data-d="hard">&#128293; Difficile<small>plus de PV et de vitesse</small></button>
+   <button data-d="expert">&#128165; Expert<small>ennemis blindés</small></button>
+  </div>
+  <p id="diffNote"></p>
+ </div>
+
+ <button id="playBtn">&#9654; LANCER LA PARTIE</button>
+
+ <div class="menuFoot">
+  <button id="menuSettings">&#9881; Paramètres</button>
+  <button id="menuHelp">&#128273; Commandes</button>
+ </div>
+ <div class="keyGrid" id="keyGrid" style="display:none"></div>
+ <p style="font-size:13px;opacity:.55;margin-top:14px">Le jeu capture la souris au lancement &mdash; Échap pour mettre en pause.</p>
+ </div></div>
 <div class="ov" id="pause">
 <h1>PAUSE</h1>
 <div id="pauseButtons"><button id="resumeBtn">Reprendre</button><button id="settingsBtn">Paramètres</button><button id="cheatBtn">🧪 Cheats</button></div>
@@ -117,7 +169,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 <button id="settingsBack">Retour à la pause</button></div></div>
 <div class="ov" id="shop"><div id="shopPanel"><h1>🛒 SHOP</h1><div id="shopPoints">Points : 0</div><div class="shopGrid" id="shopGrid"></div><button id="shopClose">Fermer (B / Échap)</button></div></div>
 <div class="ov" id="cheat"><div id="cheatPanel"><h1>🧪 PANNEAU DE CHEATS</h1><div id="cheatStatus"></div><div id="cheatList"></div><button id="cheatClose">Fermer (Échap)</button></div></div>
-<div class="ov" id="over"><h1>GAME OVER</h1><p id="fs"></p><button id="again">Rejouer</button></div>
+<div class="ov" id="over"><h1>GAME OVER</h1><p id="fs"></p><button id="again">Rejouer</button><button id="backMenu" style="background:#888">Changer de mode / difficulté</button></div>
 <script>window.onerror=function(m,s,l){var d=document.getElementById('err');d.style.display='block';d.textContent='Erreur JS : '+m+' (ligne '+l+')'}
 /* MODE SOLO UNIQUEMENT */
 document.addEventListener('DOMContentLoaded',()=>{
@@ -432,7 +484,7 @@ function setupSettings(){
   $('volume').oninput=e=>{settings.volume=+e.target.value/100;applySettings()};
   $('sensitivity').oninput=e=>{settings.sensitivity=+e.target.value/100;applySettings()};
   $('settingsBtn').onclick=()=>{$('pause').style.display='none';$('settings').style.display='flex'};
-  $('settingsBack').onclick=()=>{$('settings').style.display='none';$('pause').style.display='flex'};
+  $('settingsBack').onclick=()=>{$('settings').style.display='none';if(state==='menu')$('menu').style.display='flex';else $('pause').style.display='flex'};
   $('qualityRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     settings.quality=b.dataset.q;
     $('qualityRow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
@@ -446,6 +498,25 @@ function setupSettings(){
   $('cheatClose').onclick=e=>{e.stopPropagation();$('cheat').style.display='none';$('pause').style.display='flex'};
   applyQuality();
   applySettings();
+}
+
+/* ================= MENU DE LANCEMENT ================= */
+const CONTROLS=[['Z / W / S / A','Se déplacer'],['Souris','Viser'],['Clic gauche','Tirer'],['Clic droit','Viser (ADS)'],
+ ['Maj','Sprinter'],['Espace','Sauter'],['Ctrl','S’accroupir'],['R','Recharger'],['1 – 5','Changer d’arme'],['6','Couteau'],
+ ['G','Grenade'],['F','Frappe aérienne'],['B','Shop'],['F1','Panneau de cheats'],['Échap','Pause']];
+let wantMp=false;
+function setupMenu(){
+  $('diffRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    diffKey=b.dataset.d;DF=DIFFS[diffKey];
+    $('diffRow').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    $('diffNote').textContent=DF.note});
+  $('diffNote').textContent=DF.note;
+  $('modeSolo').onclick=()=>{wantMp=false;$('modeSolo').classList.add('on');$('modeMp').classList.remove('on')};
+  $('modeMp').onclick=()=>{if($('modeMp').disabled)return;wantMp=true;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on')};
+  $('menuHelp').onclick=()=>{const g=$('keyGrid');
+    if(g.style.display==='none'){g.innerHTML=CONTROLS.map(c=>'<div><kbd>'+c[0]+'</kbd>'+c[1]+'</div>').join('');g.style.display='grid'}else g.style.display='none'};
+  $('menuSettings').onclick=e=>{e.stopPropagation();$('menu').style.display='none';$('settings').style.display='flex'};
+  $('playBtn').onclick=e=>{e.stopPropagation();mp=(wantMp&&!!room);newGame();lock()};
 }
 
 /* ================= AUDIO (synthétisé) ================= */
@@ -710,7 +781,15 @@ const em={p:new R.MeshStandardMaterial({color:0x2a4a8a,roughness:.7}),b:new R.Me
   k:new R.MeshStandardMaterial({color:0x40202a,roughness:.72,metalness:.1,envMapIntensity:.5}),
   blade:new R.MeshStandardMaterial({color:0xdfe6ec,roughness:.18,metalness:1,envMapIntensity:1.6})};
 let wave=0,toSpawn=0,wt=1.5,spT=0,state='menu';
-function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blade:!!blade,lunge:0,eh:boss?3.6:1.5,hp:boss?1800:(blade?70+wave*14:90+wave*18),alert:0,los:false,losT:0,cool:1,sd:1,cv:0,cvT:0,cp:{x:0,z:0},wp:null,dead:0,rm:0,fl:0,wp2:0,mov:0,sp:boss?2.4:blade?Math.min(4.8+wave*.25,8.4):Math.min(3+wave*.15,5)};
+/* ---- DIFFICULTÉ (choisie dans l'écran de lancement) ---- */
+const DIFFS={
+ easy:  {n:'Facile',  hp:.6, sp:.8, dmg:.6, cnt:.7,  pts:.5, note:'Les ennemis frappent moins fort et apparaissent en moins grand nombre. Bonus de points réduit.'},
+ normal:{n:'Normal',  hp:1,  sp:1,  dmg:1,  cnt:1,   pts:1,  note:'L’expérience prévue : vagues de 6 à 16 ennemis, boss à 1800 PV.'},
+ hard:  {n:'Difficile',hp:1.6,sp:1.22,dmg:1.5, cnt:1.35,pts:1.5, note:'Plus d’ennemis, plus rapides, 60% de PV en plus. Les dégâts reçus sont multipliés par 1.5.'},
+ expert:{n:'Expert', hp:2.5, sp:1.45,dmg:2.1, cnt:1.7, pts:2.2, note:'Mode sans pitié : ennemis blindés et rapides. Attends les charges et vise la tête.'}
+};
+let diffKey='normal',DF=DIFFS.normal;
+function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blade:!!blade,lunge:0,eh:boss?3.6:1.5,hp:Math.round((boss?1800:(blade?70+wave*14:90+wave*18))*DF.hp),alert:0,los:false,losT:0,cool:1,sd:1,cv:0,cvT:0,cp:{x:0,z:0},wp:null,dead:0,rm:0,fl:0,wp2:0,mov:0,sp:(boss?2.4:blade?Math.min(4.8+wave*.25,8.4):Math.min(3+wave*.15,5))*DF.sp};
   const add=(ge,m,x,y,z,hd)=>{const me=new R.Mesh(ge,m.clone());me.position.set(x,y,z);me.castShadow=true;me.userData={e,head:hd};g.add(me);e.parts.push(me);return me};
   const U=boss?em.b:(blade?em.k:(wave%2?em.u:em.v));
   const legL=new R.Group(),legR=new R.Group();legL.position.set(-.13,.86,0);legR.position.set(.13,.86,0);g.add(legL,legR);
@@ -732,7 +811,7 @@ function updEnemyFlash(e,dt){
  if(e.fl>0){const k=e.fl/.12;
   for(const p of e.parts)p.material.emissive.setRGB(k*.85,k*k*.22,k*k*.15)}
  else for(const p of e.parts){if(p!==e.visor)p.material.emissive.setRGB(0,0,0)}}
-function kill(e,hs){e.dead=T;P.score+=100+(hs?50:0);const earned=e.boss?50:(W[cur].points||10);P.points+=earned;banner(hs?'HEADSHOT +'+(earned+50):(e.boss?'+50 POINTS BOSS':'+'+earned+' POINTS'),.8,28);
+function kill(e,hs){e.dead=T;P.score+=100+(hs?50:0);const earned=Math.round((e.boss?50:(W[cur].points||10))*DF.pts);P.points+=earned;banner(hs?'HEADSHOT +'+(earned+50):(e.boss?'+'+earned+' POINTS BOSS':'+'+earned+' POINTS'),.8,28);
  killfeed(hs?'☠ ENNEMI ÉLIMINÉ · HEADSHOT +'+(earned+50):'☠ ENNEMI ÉLIMINÉ +'+earned,hs?'#ffd447':'#7c4');
  killFx(e.g.position);if(e.boss){shake=Math.max(shake,.7);sfx.boom();ringFx(v1.copy(e.g.position).setY(.2),new R.Vector3(0,1,0),0xff5522,7)}
  P.streak++;const sk=P.streak;/* KILLSTREAKS : x3 UAV, x5 frappe aérienne, x8 rage, puis frappe tous les 4 */
@@ -741,7 +820,7 @@ function kill(e,hs){e.dead=T;P.score+=100+(hs?50:0);const earned=e.boss?50:(W[cu
  if(e.boss){const wi=[0,2,3,4,5][Math.min(bossDropIndex,4)];const colors=[0x4aa3ff,0xff8a33,0xcfd6ff,0x66ff66,0xffffff];const m=new R.Mesh(new R.BoxGeometry(.9,.3,.3),new R.MeshBasicMaterial({color:colors[Math.min(bossDropIndex,3)]}));m.position.set(e.g.position.x,.6,e.g.position.z);scene.add(m);picks.push({m,t:'w',w:wi,l:9999});P.score+=1000;resetShopStock();bossDropIndex=Math.min(bossDropIndex+1,5);banner('MASTODONTE ÉLIMINÉ — DROP : '+W[wi].n,4,34)}
  else if(rnd()<.4){const t=rnd()<.5?'a':'h',m=new R.Mesh(new R.BoxGeometry(.4,.3,.4),new R.MeshBasicMaterial({color:t=='a'?0x44cc44:0xdd3333}));
   m.position.set(e.g.position.x,.4,e.g.position.z);scene.add(m);picks.push({m,t,l:20})}}
-function hurt(d,from){if(cheats.god)return;P.hp-=d;P.streak=0;P.last=T;sfx.hurt();sfx.whiz();vig=1;shake=Math.max(shake,Math.min(.5,d*.012));$('hurtfx').style.opacity=Math.min(.85,.25+d*.02);
+function hurt(d,from){if(cheats.god)return;d*=DF.dmg;P.hp-=d;P.streak=0;P.last=T;sfx.hurt();sfx.whiz();vig=1;shake=Math.max(shake,Math.min(.5,d*.012));$('hurtfx').style.opacity=Math.min(.85,.25+d*.02);
  const a=Math.atan2(-(from.x-P.pos.x),-(from.z-P.pos.z))-P.yaw;
   $('dmg').style.transform=`rotate(${-a}rad)`;$('dmg').style.opacity=1}
 function updEnemy(e,dt){const p=e.g.position,dx=P.pos.x-p.x,dz=P.pos.z-p.z,d=Math.hypot(dx,dz)||.01;
@@ -795,7 +874,7 @@ function enemyFlash(p){const m=eflashes.find(x=>!x.visible);if(!m)return;m.visib
 for(let i=0;i<8;i++){const m=new R.Sprite(new R.SpriteMaterial({map:flashTex,blending:R.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));m.visible=false;m.userData={l:0};scene.add(m);eflashes.push(m)}
 function killfeed(txt,color){const k=$('kf');if(!k)return;const d=document.createElement('b');d.textContent=txt;if(color)d.style.borderLeftColor=color;k.appendChild(d);
  while(k.children.length>5)k.removeChild(k.firstChild);setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d)},4200)}
-function startWave(){wave++;const boss=wave%5===0;toSpawn=boss?1:4+wave*2;banner(boss?'⚠ BOSS : LE MASTODONTE ⚠':'VAGUE '+wave,boss?3.5:2)}
+function startWave(){wave++;const boss=wave%5===0;toSpawn=boss?1:Math.max(1,Math.round((4+wave*2)*DF.cnt));banner(boss?'⚠ BOSS : LE MASTODONTE ⚠':'VAGUE '+wave+' · '+DF.n.toUpperCase(),boss?3.5:2)}
 /* ================= GRENADES, EXPLOSIONS, FRAPPE ================= */
 const gg=new R.SphereGeometry(.12,8,8),gmt=new R.MeshStandardMaterial({color:0x2a4a2a});
 for(let i=0;i<8;i++){const m=new R.Mesh(gg,gmt);m.visible=false;m.castShadow=true;m.userData={v:new R.Vector3(),f:0};scene.add(m);gr.push(m)}
@@ -892,8 +971,10 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
   else if(alive==0){wt=4;P.score+=200;P.hp=Math.min(P.maxHp,P.hp+25);refill();banner('VAGUE '+wave+' TERMINÉE',2.5,40);killfeed('✔ VAGUE '+wave+' NETTOYÉE  +'+200,'#6cc7ff')}
  hud(dt,5+(w=>{const mv=hs>1?2:1;return(w.spr*mv*(adsT>.5?.4:1)+heat)*700})(W[cur]));
  if(P.hp<=0&&!mp){state='over';$('shop').style.display='none';document.exitPointerLock();
-  $('fs').innerHTML='<span style="color:#ff4b3e;font-size:34px;letter-spacing:4px">ÉLIMINÉ</span><br><br>Score : <b>'+P.score+'</b><br>Vague atteinte : <b>'+wave+'</b><br>Éliminations : <b>'+P.streak+'</b>';
-  $('over').style.display='flex';$('hud').style.display='none';$('hurtfx').style.opacity=.9}
+  $('fs').innerHTML='<span style="color:#ff4b3e;font-size:34px;letter-spacing:4px">ÉLIMINÉ</span><br><br>Difficulté : <b>'+DF.n+'</b><br>Score : <b>'+P.score+'</b><br>Vague atteinte : <b>'+wave+'</b><br>Éliminations : <b>'+P.streak+'</b>';
+  $('over').style.display='flex';$('hud').style.display='none';$('hurtfx').style.opacity=.9;
+  const mb=$('backMenu');
+  mb.onclick=e=>{e.stopPropagation();$('over').style.display='none';$('menu').style.display='flex';state='menu'}}
 }
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;T+=dt;if(state==='play')update(dt);
@@ -906,7 +987,7 @@ function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.
   FXQ.tracers.concat(FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);$('kf').innerHTML='';$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
   ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
-$('menu').onclick=()=>{mp=false;newGame();lock()};$('shopClose').onclick=shopClose;$('again').onclick=e=>{e.stopPropagation();newGame();lock()};setupSettings();
+$('again').onclick=e=>{e.stopPropagation();newGame();lock()};$('shopClose').onclick=shopClose;setupSettings();setupMenu();
 document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement){if(state!=='over'){state='play';['menu','pause','settings','shop','cheat'].forEach(i=>$(i).style.display='none');$('hud').style.display='block'}}
  else if(state==='play'){state='pause';$('pause').style.display='flex';held=0;adsHeld=0}});
 addEventListener('mousemove',e=>{if(state==='play'){const ss=.0022*settings.sensitivity*(1-(cur==3?.8:.4)*adsT);P.yaw-=e.movementX*ss;P.pitch-=e.movementY*ss;
@@ -948,7 +1029,7 @@ function mpTick(dt){const seen=new Set();
  if(P.hp<=0&&!P.dead){P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
  if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;refill();banner('EN JEU',1,30)}}
 async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.use('room')}catch(e){}if(!room)return;
- $('mpbtn').style.display='inline-block';$('mpbtn').onclick=e=>{e.stopPropagation();room=pubRoom;mp=false;newGame();lock()};
+ $('modeMp').disabled=false;$('modeMp').onclick=e=>{e.stopPropagation();wantMp=true;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on')};
  room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
  room.on('kill',m=>{const d=m.data;if(!mp||!d)return;banner(nameOf(d.k)+' ➜ '+nameOf(d.v),2,24);if(d.k===myId&&d.v!==myId)P.score+=100});
  room.on('shot',m=>{if(!mp||m.isMe)return;const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12)});
