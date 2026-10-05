@@ -689,7 +689,7 @@ function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catc
 let armSel=1;
 const SCOPE_LIST=['none','iron','red','holo','x2','x4'],SIL_LIST=['none','short','long'];
 const SCOPE_DESC={none:'Aucune lentille',iron:'Grails de base',red:'Réticule point rouge, +4° de zoom',holo:'Cercle holographique, +6° de zoom',x2:'Grossissement 2x, +12° de zoom',x4:'Grossissement 4x, +26° de zoom'};
-const SIL_DESC={none:'Bruit normal',short:'−18% de recul, −4% de dégâts, −58% de bruit',long:'−38% de recul, −10% de dégâts, −78% de bruit'};
+const SIL_DESC={none:'Bruit normal',short:'−18% de recul, +3% de cadence, −58% de bruit',long:'−38% de recul, +7% de cadence, −78% de bruit'};
 /* l'armurerie est accessible UNIQUEMENT depuis le menu de démarrage */
 function armoryOpen(){armSel=1;$('menu').style.display='none';$('armory').style.display='flex';updateArmoryUI()}
 function armoryClose(){$('armory').style.display='none';$('menu').style.display='flex'}
@@ -838,8 +838,8 @@ const OPT_SCOPE={
  x4:{n:'Lunette 4x',cost:900,az:26,spr:.55}};
 const OPT_SIL={
  none:{n:'Aucun',cost:0,rec:1,dmg:1,rate:1,loud:1},
- short:{n:'Silencieux court',cost:300,rec:.82,dmg:.96,rate:1.03,loud:.42},
- long:{n:'Silencieux long',cost:640,rec:.62,dmg:.9,rate:1.07,loud:.22}};
+ short:{n:'Silencieux court',cost:300,rec:.82,dmg:1,rate:1.03,loud:.42},
+ long:{n:'Silencieux long',cost:640,rec:.62,dmg:1,rate:1.07,loud:.22}};
 const ARM={}; /* ARM[i]={scope:'none',sil:'none'} */
 W.forEach((w,i)=>{ARM[i]={scope:w.knife?'none':(i===3?'x4':'iron'),sil:'none'};
  if(save.arm[i])ARM[i]=Object.assign(ARM[i],save.arm[i])});
