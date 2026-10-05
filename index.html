@@ -1152,10 +1152,14 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
   swayX*=Math.exp(-dt*7);swayY*=Math.exp(-dt*7);
 /* Position de visée : chaque arme a sa propre hauteur de visée (SIGHT).
    - Avec un viseur optique : on annule la hauteur du TUBE pour le mettre au centre de l'écran.
-   - Avec les grains : ADS_CFG est déjà réglé pour eux, aucun offset supplémentaire. */
+   - Avec les grains : ADS_CFG est déjà réglé pour eux, aucun offset supplémentaire.
+   ADS_EXTRA[i] : réglage manuel supplémentaire par arme (0 = pas d'ajustement). */
+/* Ajustement vertical manuel par arme, en unités monde (négatif = viseur plus bas).
+   0 = M4A1, 1 = M9, 2 = SPAS-12, 3 = AWP, 4 = MINIGUN, 5 = Couteau */
+const ADS_EXTRA=[-.028,0,0,0,0,0];
  const scOn=scopeOn(cur),sz=SIGHT[cur];
  const ad0=W[cur].ads||{x:0,y:-.06,z:-.34};
- const adjY=scOn?-sz.y:0,adjZ=scOn?Math.min(-.10,sz.z*.55):0;
+ const adjY=(scOn?-sz.y:0)+ADS_EXTRA[cur],adjZ=scOn?Math.min(-.10,sz.z*.55):0;
  /* décalage vertical demandé, en pixels écran convertis en unités monde */
  const WANT_PX=175;
  const worldPerPx=(2*Math.tan(cam.fov*Math.PI/360)*Math.abs(pivot.position.z||.35))/innerHeight;
