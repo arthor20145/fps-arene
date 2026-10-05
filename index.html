@@ -846,15 +846,17 @@ for(let i=0;i<6;i++){
   /* --- viseur : tube creux + lentille transparente + réticule --- */
   const s=new R.Group();const sz=SIGHT[i];
   if(i!==5){
-   /* tube ouvert (RingGeometry) : on voit à travers le viseur */
+   /* tube ouvert (RingGeometry) : on voit à travers le viseur.
+      RingGeometry a déjà sa normale sur Z (face au joueur) : aucune rotation,
+      une rotation x=-PI/2 le rendrait horizontal. */
    const ring=new R.Mesh(new R.RingGeometry(.0205,.0285,20,1,true),scopeTubeMat);
-   ring.position.set(0,sz.y,sz.z-.052);ring.rotation.x=-Math.PI/2;s.add(ring);
+   ring.position.set(0,sz.y,sz.z-.052);s.add(ring);
    /* bague arrière du tube, pour l'épaisseur */
    const ringB=new R.Mesh(new R.RingGeometry(.0205,.0285,20,1,true),scopeTubeMat);
-   ringB.position.set(0,sz.y,sz.z+.038);ringB.rotation.x=-Math.PI/2;s.add(ringB);
-   /* lentille : verre semi-transparent */
+   ringB.position.set(0,sz.y,sz.z+.038);s.add(ringB);
+   /* lentille : verre semi-transparent, verticale elle aussi */
    const lens=new R.Mesh(new R.RingGeometry(.0,.0205,20),lensMat);
-   lens.position.set(0,sz.y,sz.z-.052);lens.rotation.x=-Math.PI/2;s.add(lens);
+   lens.position.set(0,sz.y,sz.z-.052);s.add(lens);
    /* réticule */
    gc(s,.009,.009,.006,dotMat,0,sz.y,sz.z-.056,Math.PI/2);
    /* rail + molette (sur le côté, ne bloquent pas la ligne de vue) */
