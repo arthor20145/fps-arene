@@ -836,7 +836,16 @@ const ADS_CFG=[{x:0,y:-.062,z:-.80},{x:0,y:-.05,z:-.52},{x:0,y:-.06,z:-.64},{x:0
 ADS_CFG.forEach((a,i)=>{W[i].ads=a;W[i].az=i===3?58:i===4?16:25});
 /* ---- géométrie des accessoires (visée + silencieux) par arme ---- */
 const MUZ=[{y:.014,z:-.87,r:.023},{y:.012,z:-.30,r:.018},{y:.02,z:-1.18,r:.035},{y:.02,z:-1.68,r:.03},{y:.02,z:-.99,r:.05},{y:.02,z:-.62,r:.02}];
-const SIGHT=[{y:.075,z:.02},{y:.062,z:-.02},{y:.075,z:.02},{y:.16,z:-.30},{y:.115,z:-.05},{y:0,z:0}];
+/* Hauteur de visée propre à chaque arme : mesurée sur le modèle 3D (grain / lunette).
+   SIGHT[i].y  = hauteur de la ligne de visée (pour centrer l'arme en ADS)
+   SIGHT[i].z  = position en profondeur du viseur (0 = pas de viseur, ex. couteau) */
+const SIGHT=[
+ {y:.074,z:.02},   /* M4A1    : grain arrière + réticule luminescent */
+ {y:.056,z:-.02},  /* M9      : grain bas + point rouge          */
+ {y:.060,z:.02},   /* SPAS-12 : grain + perle                   */
+ {y:.105,z:-.30},  /* AWP     : lunette haute                    */
+ {y:.090,z:-.05},  /* MINIGUN : bloc de visée relevé            */
+ {y:0,   z:0}];    /* COUTEAU : pas de visée                   */
 const silMat=new R.MeshStandardMaterial({color:0x14171a,roughness:.55,metalness:.7,envMapIntensity:.7});
 /* verre très clair : on voit nettement à travers, léger reflet bleuté */
 const lensMat=new R.MeshBasicMaterial({color:0xbfe4ff,transparent:true,opacity:.07,depthWrite:false,side:R.DoubleSide});
@@ -1137,14 +1146,14 @@ function update(dt){if(mp){mpTick(dt);if(P.dead)return}
   kick=Math.max(0,kick-dt*8);heat=Math.max(0,heat-dt*.05);uav=Math.max(0,uav-dt);rage=Math.max(0,rage-dt);shake=Math.max(0,shake-dt*2);
   const sprintPose=sprint?1:0;sprintA+=(sprintPose-sprintA)*Math.min(1,dt*9);
   swayX*=Math.exp(-dt*7);swayY*=Math.exp(-dt*7);
-/* Position de visée : les valeurs de ADS_CFG visent les grains de l'arme.
-    Avec un viseur optique, on recale le pivot pour que le TUBE soit pile au centre
-    de l'écran, et on rapproche l'arme pour agrandir l'image dans le tube. */
+/* Position de visée : chaque arme a sa propre hauteur de visée (SIGHT).
+   - Avec un viseur optique : on annule la hauteur du TUBE pour le mettre au centre de l'écran.
+   - Avec les grains : ADS_CFG est déjà réglé pour eux, aucun offset supplémentaire. */
  const scOn=scopeOn(cur),sz=SIGHT[cur];
  const ad0=W[cur].ads||{x:0,y:-.06,z:-.34};
  const adjY=scOn?-sz.y:0,adjZ=scOn?Math.min(-.10,sz.z*.55):0;
  /* décalage vertical demandé, en pixels écran convertis en unités monde */
- const WANT_PX=75;
+ const WANT_PX=175;
  const worldPerPx=(2*Math.tan(cam.fov*Math.PI/360)*Math.abs(pivot.position.z||.35))/innerHeight;
  const ad={x:ad0.x,y:ad0.y+adjY+WANT_PX*worldPerPx,z:ad0.z+adjZ};
  const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT),hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sprintA*.07+WANT_PX*worldPerPx,hipZ=-.35+kick*.06;
