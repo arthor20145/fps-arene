@@ -286,7 +286,7 @@ renderer.setSize(innerWidth,innerHeight);
  scene.add(new R.HemisphereLight(0x9ec0dd,0x4a4230,.5));
  scene.add(new R.AmbientLight(0xa8b8c8,.2));
  const sun=new R.DirectionalLight(0xffe0b0,1.5);sun.position.copy(sunDir).multiplyScalar(70);sun.castShadow=true;
- sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.03;Object.assign(sun.shadow.camera,{left:-62,right:62,top:62,bottom:-62,near:1,far:190});sun.shadow.camera.updateProjectionMatrix();scene.add(sun);
+ sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;sun.shadow.normalBias=.03;Object.assign(sun.shadow.camera,{left:-62,right:62,top:62,bottom:-62,near:1,far:190});sun.shadow.camera.updateProjectionMatrix();scene.add(sun);scene.add(sun.target);
  const fill=new R.DirectionalLight(0x9fc0e8,.5);fill.position.set(-40,30,-30);scene.add(fill);
  const sunSprite=(()=>{const m=new R.Sprite(new R.SpriteMaterial({map:(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const rg=g.createRadialGradient(64,64,0,64,64,64);rg.addColorStop(0,'rgba(255,250,230,1)');rg.addColorStop(.2,'rgba(255,225,170,.6)');rg.addColorStop(1,'rgba(255,200,140,0)');g.fillStyle=rg;g.fillRect(0,0,128,128);return new R.CanvasTexture(c)})(),blending:R.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));
   m.scale.set(55,55,1);m.position.copy(sunDir).multiplyScalar(330);scene.add(m);return m})();
@@ -311,7 +311,7 @@ renderer.setSize(innerWidth,innerHeight);
   const m=new R.MeshStandardMaterial({map:tex,normalMap:nm,normalScale:new R.Vector2(opt.nsx==null?.7:opt.nsx,opt.nsy==null?.7:opt.nsy),
    roughness:opt.rough==null?.93:opt.rough,metalness:opt.metal==null?.04:opt.metal,envMapIntensity:opt.env==null?.5:opt.env});
   if(opt.rep)tex.repeat.set(opt.rep,opt.rep);return m}
- const mGround=mat(ctex(g=>{g.fillStyle='#43443d';g.fillRect(0,0,256,256);g.fillStyle='#c8b060';g.fillRect(124,0,8,90);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(0,238,256,18)},30),{ns:1.6,nsx:.25,nsy:.25,rough:1,env:.18,rep:30});
+ const mGround=mat(ctex(g=>{g.fillStyle='#43443d';g.fillRect(0,0,256,256);g.fillStyle='#c8b060';g.fillRect(124,0,8,90);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(0,238,256,18)},50),{ns:1.6,nsx:.25,nsy:.25,rough:1,env:.18,rep:50});
  const mWall=mat(ctex(g=>{g.fillStyle='#7a7468';g.fillRect(0,0,256,256);g.strokeStyle='#3a362e';g.lineWidth=3;for(let y=0;y<256;y+=32){g.strokeRect(0,y,256,32);for(let x=(y/32%2)*32;x<256;x+=64)g.strokeRect(x,y,64,32)}
   g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,250,256,6)},3),{ns:2.4,rough:.95,env:.4,rep:3});
  const mCrate=mat(ctex(g=>{g.fillStyle='#6b4f2a';g.fillRect(0,0,256,256);g.strokeStyle='#3b2a14';g.lineWidth=10;g.strokeRect(5,5,246,246);g.beginPath();g.moveTo(0,0);g.lineTo(256,256);g.moveTo(256,0);g.lineTo(0,256);g.stroke()},1),{ns:2,rough:.85,env:.45});
@@ -319,20 +319,20 @@ renderer.setSize(innerWidth,innerHeight);
  const mBuild=mat(ctex(g=>{g.fillStyle='#6b665c';g.fillRect(0,0,256,256);for(let y=16;y<256;y+=64)for(let x=16;x<256;x+=64){g.fillStyle=rnd()<.3?'#e8c060':'#16202a';g.fillRect(x,y,32,40);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(x,y,32,3);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x,y+37,32,3)}
   g.fillStyle='rgba(0,0,0,.22)';g.fillRect(0,0,256,10)},2),{ns:2,rough:.9,env:.45});
 /* ================= MAP ================= */
-const B=60,boxes=[],bm=[];
+const B=100,K=B/60,boxes=[],bm=[];
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function addBox(x,z,w,h,d,m){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);
  boxes.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});bm.push(me)}
 addBox(0,-B-.5,2*B+2,6,1,mWall);addBox(0,B+.5,2*B+2,6,1,mWall);addBox(-B-.5,0,1,6,2*B+2,mWall);addBox(B+.5,0,1,6,2*B+2,mWall);
-[[-28,-28,16,9,14],[28,-26,14,7,16],[-26,26,12,6,18],[30,30,16,10,12]].forEach(a=>addBox(...a,mBuild));
+[[-28,-28,16,9,14],[28,-26,14,7,16],[-26,26,12,6,18],[30,30,16,10,12]].forEach(a=>addBox(a[0]*K,a[1]*K,a[2],a[3],a[4],mBuild));
 let sd=7;const lc=()=>(sd=(sd*16807)%2147483647)/2147483647;
-for(let i=0;i<26;i++){const s=1.5+lc()*1.5,x=(lc()-.5)*100,z=(lc()-.5)*100;if(Math.hypot(x,z)>7)addBox(x,z,s,s*(lc()<.3?1.6:.8),s,mCrate)}
-for(let i=0;i<8;i++){const x=(lc()-.5)*90,z=(lc()-.5)*90;if(Math.hypot(x,z)>7)addBox(x,z,lc()<.5?6:.9,1.2,lc()<.5?.9:6,mConc)}
+for(let i=0;i<60;i++){const s=1.5+lc()*1.5,x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,z)>7)addBox(x,z,s,s*(lc()<.3?1.6:.8),s,mCrate)}
+for(let i=0;i<18;i++){const x=(lc()-.5)*90*K,z=(lc()-.5)*90*K;if(Math.hypot(x,z)>7)addBox(x,z,lc()<.5?6:.9,1.2,lc()<.5?.9:6,mConc)}
 /* props : barils explosifs-look (collision) et lampadaires */
 const bg=new R.CylinderGeometry(.4,.4,1.1,10),bmt=[new R.MeshStandardMaterial({color:0x7a2416,roughness:.55,metalness:.35,envMapIntensity:.5}),new R.MeshStandardMaterial({color:0x24406b,roughness:.55,metalness:.35,envMapIntensity:.5})];
-for(let i=0;i<16;i++){const x=(lc()-.5)*100,z=(lc()-.5)*100;if(Math.hypot(x,z)<7)continue;const m=new R.Mesh(bg,bmt[i%2]);m.position.set(x,.55,z);m.castShadow=m.receiveShadow=true;scene.add(m);bm.push(m);boxes.push({x0:x-.4,x1:x+.4,z0:z-.4,z1:z+.4,top:1.1,cx:x,cz:z,r:.6})}
+for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,z)<7)continue;const m=new R.Mesh(bg,bmt[i%2]);m.position.set(x,.55,z);m.castShadow=m.receiveShadow=true;scene.add(m);bm.push(m);boxes.push({x0:x-.4,x1:x+.4,z0:z-.4,z1:z+.4,top:1.1,cx:x,cz:z,r:.6})}
  const pg2=new R.CylinderGeometry(.08,.1,6,6),pm2=new R.MeshStandardMaterial({color:0x2a2a2c,roughness:.7,metalness:.4,envMapIntensity:.5}),lg=new R.SphereGeometry(.3,8,8),lm=new R.MeshBasicMaterial({color:0xffe9b0});
- for(let i=0;i<10;i++){const x=-50+(i%5)*25,z=i<5?-8:12,p=new R.Mesh(pg2,pm2),l=new R.Mesh(lg,lm);p.position.set(x,3,z);l.position.set(x,6.1,z);p.castShadow=true;scene.add(p,l)}
+ for(let i=0;i<10;i++){const x=(-50+(i%5)*25)*K,z=(i<5?-8:12)*K,p=new R.Mesh(pg2,pm2),l=new R.Mesh(lg,lm);p.position.set(x,3,z);l.position.set(x,6.1,z);p.castShadow=true;scene.add(p,l)}
  /* ---- éclairage ambiant based (IBL) + occlusion de contact ---- */
  (()=>{try{const pm=new R.PMREMGenerator(renderer);pm.compileEquirectangularShader();scene.environment=pm.fromEquirectangular(skyTex).texture}catch(e){}})();
  const csTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const rg=g.createRadialGradient(64,64,2,64,64,62);
@@ -353,32 +353,32 @@ for(let i=0;i<16;i++){const x=(lc()-.5)*100,z=(lc()-.5)*100;if(Math.hypot(x,z)<7
   if(!ghost)bm.push(mesh); /* tout le décor arrête les balles, sauf les antennes (ghost=true) */
   return mesh}
  const tireGeo=new R.TorusGeometry(.42,.17,8,16);
- for(let i=0;i<9;i++){const x=(lc()-.5)*96,z=(lc()-.5)*96;if(Math.hypot(x,z)<9)continue;const n=2+Math.floor(lc()*3);
+ for(let i=0;i<20;i++){const x=(lc()-.5)*96*K,z=(lc()-.5)*96*K;if(Math.hypot(x,z)<9)continue;const n=2+Math.floor(lc()*3);
   for(let k=0;k<n;k++){const t=dec(new R.Mesh(tireGeo,mRubber),x,.18+k*.34,z,lc()*3);t.rotation.x=Math.PI/2}
   contact(x,z,1.6,1.6);boxes.push({x0:x-.45,x1:x+.45,z0:z-.45,z1:z+.45,top:n*.34,cx:x,cz:z,r:.5})}
  const coneGeo=new R.ConeGeometry(.26,.7,10),coneBase=new R.BoxGeometry(.56,.07,.56);
- for(let i=0;i<14;i++){const x=(lc()-.5)*100,z=(lc()-.5)*100;if(Math.hypot(x,z)<8)continue;
+ for(let i=0;i<30;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,z)<8)continue;
   dec(new R.Mesh(coneGeo,mOrange),x,.36,z,lc()*6);dec(new R.Mesh(coneBase,mOrange),x,.04,z,lc()*6);contact(x,z,1,1)}
  const bagGeo=new R.SphereGeometry(.34,8,6);
- for(let i=0;i<10;i++){const x=(lc()-.5)*92,z=(lc()-.5)*92;if(Math.hypot(x,z)<9)continue;const rows=2+Math.floor(lc()*2);
+ for(let i=0;i<22;i++){const x=(lc()-.5)*92*K,z=(lc()-.5)*92*K;if(Math.hypot(x,z)<9)continue;const rows=2+Math.floor(lc()*2);
   for(let r=0;r<rows;r++)for(let k=-1;k<=1;k++){const b=dec(new R.Mesh(bagGeo,mSand),x+k*.62+r*.06,.24+r*.4,z,lc()*.4);b.scale.set(1,.62,.86)}
   contact(x,z,2.4,1.4);boxes.push({x0:x-.95,x1:x+.95,z0:z-.4,z1:z+.4,top:rows*.4+.2,cx:x,cz:z,r:1.1})}
  const contGeo=new R.BoxGeometry(6,2.6,2.6);
- for(let i=0;i<4;i++){const x=(lc()-.5)*80,z=(lc()-.5)*80;if(Math.hypot(x,z)<14)continue;const k=Math.floor(lc()*4)*Math.PI/2;
+ for(let i=0;i<10;i++){const x=(lc()-.5)*80*K,z=(lc()-.5)*80*K;if(Math.hypot(x,z)<14)continue;const k=Math.floor(lc()*4)*Math.PI/2;
   const c=dec(new R.Mesh(contGeo,i%2?mContainer:mRust),x,1.3,z,k);
   for(let r=-1;r<=1;r++){const rib=new R.Mesh(new R.BoxGeometry(.12,2.5,2.7),mMetal);rib.position.set(r*1.6,0,0);c.add(rib)}
   const sw=k%Math.PI===0?6:2.6,sd2=k%Math.PI===0?2.6:6;
   contact(x,z,sw+1,sd2+1); /* bm deja rempli par dec() : la caisse bloque les balles */
   boxes.push({x0:x-sw/2,x1:x+sw/2,z0:z-sd2/2,z1:z+sd2/2,top:2.6,cx:x,cz:z,r:Math.hypot(sw,sd2)/2})}
- for(let i=0;i<7;i++){const x=(lc()-.5)*86,z=(lc()-.5)*86;if(Math.hypot(x,z)<9)continue;
+ for(let i=0;i<16;i++){const x=(lc()-.5)*86*K,z=(lc()-.5)*86*K;if(Math.hypot(x,z)<9)continue;
   const b=dec(new R.Mesh(new R.BoxGeometry(2.4,.85,.85),mConc),x,.43,z,lc()*6.28);
   b.scale.set(1,1,.8);contact(x,z,3,2);boxes.push({x0:x-1.2,x1:x+1.2,z0:z-.5,z1:z+.5,top:.85,cx:x,cz:z,r:1.3})}
- for(let i=0;i<6;i++){const x=(lc()-.5)*90,z=(lc()-.5)*90;if(Math.hypot(x,z)<10)continue;
+ for(let i=0;i<14;i++){const x=(lc()-.5)*90*K,z=(lc()-.5)*90*K;if(Math.hypot(x,z)<10)continue;
   const p=dec(new R.Mesh(new R.BoxGeometry(.09,1.7,.09),mMetal),x,.85,z,lc()*6.28);
   for(let k=0;k<5;k++){const w=new R.Mesh(new R.BoxGeometry(2.6,.05,.05),mMetal);w.position.set(0,.2+k*.3,0);p.add(w)}
   contact(x,z,3,3)}
  /* poussières flottantes */
- const dust=(()=>{const n=420,pa=new Float32Array(n*3);for(let i=0;i<n;i++){pa[i*3]=(rnd()-.5)*110;pa[i*3+1]=rnd()*14;pa[i*3+2]=(rnd()-.5)*110}
+ const dust=(()=>{const n=900,pa=new Float32Array(n*3);for(let i=0;i<n;i++){pa[i*3]=(rnd()-.5)*110*K;pa[i*3+1]=rnd()*14;pa[i*3+2]=(rnd()-.5)*110*K}
   const g=new R.BufferGeometry();g.setAttribute('position',new R.BufferAttribute(pa,3));
   const m=new R.PointsMaterial({color:0xffe6c0,size:.07,transparent:true,opacity:.5,depthWrite:false,sizeAttenuation:true});
   const p=new R.Points(g,m);scene.add(p);return p})();
@@ -1031,7 +1031,7 @@ function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blad
   add(eg.c,em.s,0,1.5,0,1);add(eg.h,em.s,0,1.68,0,1);add(eg.helm,em.vest,0,1.8,.02);add(eg.vis,em.p,0,1.7,-.19);
   e.visor=e.parts[e.parts.length-1];e.visor.material=new R.MeshStandardMaterial({color:0x200505,emissive:boss?0xff2a12:blade?0xff9500:0xff3a1a,emissiveIntensity:boss?2.4:blade?2:1.4,roughness:.2,metalness:.6});
   if(boss){g.scale.setScalar(2.4);e.parts.forEach(p=>{if(p.material.emissive&&!p.material.emissive.getHex()){p.material.emissive.setHex(0x220505);p.material.emissiveIntensity=1}})}
-  for(let i=0;i<12;i++){const a=rnd()*6.28,r=40+rnd()*15;g.position.set(Math.max(-56,Math.min(56,Math.cos(a)*r)),0,Math.max(-56,Math.min(56,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>28)break}
+  for(let i=0;i<12;i++){const a=rnd()*6.28,r=(40+rnd()*15)*1.3;g.position.set(Math.max(-(B-4),Math.min(B-4,Math.cos(a)*r)),0,Math.max(-(B-4),Math.min(B-4,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>28)break}
   scene.add(g);enemies.push(e);if(boss)sfx.roar();else if(blade)killfeed('⚠ ASSAUT AU COUTEAU !','#ff9b2a')}
 function flashEnemy(e){if(e.fl>0)return;for(const p of e.parts)p.material.emissive.setHex(0xffffff)}
 function updEnemyFlash(e,dt){
@@ -1231,6 +1231,7 @@ const ADS_BACK=[-.22,0,0,0,0,0];
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;T+=dt;if(state==='play')update(dt);
  if(quitArmed&&state==='pause'){quitTimer-=dt;if(quitTimer<=0){quitArmed=false;$('quitMsg').textContent=''}}
+ {const sx=Math.round(P.pos.x/2)*2,sz=Math.round(P.pos.z/2)*2;sun.target.position.set(sx,0,sz);sun.position.set(sx+sunDir.x*70,sunDir.y*70,sz+sunDir.z*70)}
  if(FX.ok&&composer){if(grade){grade.uniforms.uTime.value=now/1000;grade.uniforms.uHurt.value=Math.min(1,vig)}composer.render()}
  else renderer.render(scene,cam)}
 /* ================= ÉTAT & ENTRÉES ================= */
@@ -1276,7 +1277,7 @@ function mkRemote(name){const g=new R.Group(),parts=[];
  const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
-function respawnPos(){for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*100,0,(rnd()-.5)*100);if(boxes.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
+function respawnPos(){for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*(2*B-20),0,(rnd()-.5)*(2*B-20));if(boxes.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
 function syncMp(){try{if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
 function mpTick(dt){const seen=new Set();
  room.peers().forEach(p=>{if(p.isMe){if(p.sameTab)myId=p.peer;return}const q=p.presence;if(q.m!==1||typeof q.x!=='number')return;seen.add(p.peer);
