@@ -155,6 +155,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
    <button id="modeMp">&#127760; En ligne &mdash; Deathmatch</button>
   </div>
   <p id="mpn" style="margin:8px 2px 0;font-size:14px;opacity:.7"></p>
+  <div id="nameRow" style="display:none;margin:10px 2px 0;align-items:center;gap:10px"><label for="pname" style="font-size:14px;opacity:.85">Ton pseudo</label><input id="pname" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Pseudo" style="flex:1;min-width:0;padding:8px 10px;font-size:16px;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;outline:none"></div>
  </div>
 
  <div class="mgroup"><span class="mtitle">Difficulté</span>
@@ -1267,12 +1268,12 @@ addEventListener('keyup',e=>k[e.code]=0);
 /* ================= MULTIJOUEUR EN LIGNE (capability "room" de la page publiée) =================
    Chaque joueur est autoritaire sur sa position (presence) ; le tireur envoie 'hit', la victime applique les dégâts
    et annonce 'kill'. Deathmatch : pas d'ennemis IA, respawn après 3 s. */
-let pubRoom=null,room=null,mp=false,myId=null,lastK=null;const remote=new Map(),myName='Joueur'+(100+Math.floor(rnd()*900));
+let pubRoom=null,room=null,mp=false,myId=null,lastK=null;const remote=new Map();let myName='Joueur'+(100+Math.floor(rnd()*900));
 function mkRemote(name){const g=new R.Group(),parts=[];
  const add=(ge,m,x,y,z,hd)=>{const me=new R.Mesh(ge,m);me.position.set(x,y,z);me.castShadow=true;me.userData={pl:null,head:hd};g.add(me);parts.push(me)};
  add(eg.l,em.d,0,.4,0);add(eg.t,em.p,0,1.1,0);add(eg.h,em.s,0,1.55,0,1);add(eg.c,em.p,0,1.68,0,1);add(eg.g,em.d,.3,1.15,-.3);
  const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.font='bold 34px Arial';x.textAlign='center';x.fillStyle='#fff';x.strokeStyle='#000';x.lineWidth=5;x.strokeText(name,128,44);x.fillText(name,128,44);
- const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
+ const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
 function respawnPos(){for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*100,0,(rnd()-.5)*100);if(boxes.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
@@ -1291,6 +1292,18 @@ async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.u
  room.on('kill',m=>{const d=m.data;if(!mp||!d)return;banner(nameOf(d.k)+' ➜ '+nameOf(d.v),2,24);if(d.k===myId&&d.v!==myId)P.score+=100});
  room.on('shot',m=>{if(!mp||m.isMe)return;const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12)});
  setInterval(()=>{$('mpn').textContent=pubRoom.peers().filter(p=>!p.isMe&&p.presence.m===1).length+' autre(s) joueur(s) en ligne'},1000)}
+/* Choix du pseudo (affiché seulement en mode En ligne, mémorisé dans le navigateur) */
+(function(){const inp=$('pname'),row=$('nameRow');if(!inp)return;
+ try{const sv=localStorage.getItem('fps_name');if(sv)inp.value=sv.slice(0,16)}catch(e){}
+ if(!inp.value)inp.value=myName;
+ const apply=()=>{const v=inp.value.replace(/[<>]/g,'').trim().slice(0,16);myName=v||('Joueur'+(100+Math.floor(Math.random()*900)));try{localStorage.setItem('fps_name',v)}catch(e){}};
+ inp.addEventListener('input',apply);inp.addEventListener('keydown',e=>e.stopPropagation());inp.addEventListener('keyup',e=>e.stopPropagation());
+ inp.addEventListener('click',e=>e.stopPropagation());
+ const show=on=>{row.style.display=on?'flex':'none'};
+ $('modeSolo').addEventListener('click',()=>show(false));
+ $('modeMp').addEventListener('click',()=>{if(!$('modeMp').disabled)show(true)});
+ $('playBtn').addEventListener('click',apply,true);
+ apply()})();
 initMp();
 requestAnimationFrame(loop);
 </script></body></html>
