@@ -113,16 +113,6 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 .keyGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;text-align:left;font-size:14px;opacity:.85;margin-top:10px}
 .keyGrid kbd{display:inline-block;min-width:26px;text-align:center;background:#1b2228;border:1px solid #456;border-bottom-width:2px;border-radius:4px;padding:1px 6px;font:12px/1.5 monospace;color:#cfe3ff;margin-right:6px}
 #diffNote{font-size:14px;opacity:.75;margin-top:8px;text-align:left}
-
-#mapVote{display:none;background:rgba(0,0,0,.84);z-index:28;cursor:default}
-#mapVotePanel{width:min(760px,92vw);background:rgba(10,14,18,.98);border:2px solid #7c4;box-shadow:0 0 40px rgba(0,0,0,.85);padding:26px;box-sizing:border-box;text-align:center}
-#mapVotePanel h1{margin:0 0 6px;font-size:38px;letter-spacing:4px}
-#mapVoteInfo{opacity:.75;margin:4px 0 18px;font-size:16px}
-#mapVoteTimer{font:bold 30px Arial;color:#ffd65a;margin:6px 0 18px}
-#mapVoteChoices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-#mapVoteChoices button{margin:0;padding:18px 10px;font-size:18px;background:#1b2228;color:#cfe3ff;border:1px solid #456}
-#mapVoteChoices button:hover,#mapVoteChoices button.on{background:#7c4;color:#111;border-color:#7c4}
-#mapVoteChoices button small{display:block;font-size:12px;opacity:.65;margin-top:4px}
 #armory{display:none;background:rgba(0,0,0,.88);z-index:26;cursor:default}
 #armoryPanel{width:min(880px,94vw);max-height:92vh;overflow:auto;background:rgba(12,16,20,.98);border:2px solid #7c4;box-shadow:0 0 40px rgba(0,0,0,.8);padding:22px 26px;box-sizing:border-box}
 #armoryPanel h1{margin:0;font-size:40px;letter-spacing:4px}
@@ -154,67 +144,6 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  <div id="hpw"><div id="hp"></div></div><div id="stamw"><div id="stam"></div></div>
  <div id="bn"></div><div id="banner2"></div><div id="kf"></div><div id="bb"><div id="bbf"></div></div>
 </div>
-<div class="ov" id="mapVote"><div id="mapVotePanel"><h1>VOTE DE LA PROCHAINE MAP</h1><div id="mapVoteInfo">Votez pour la prochaine map</div><div id="mapVoteTimer">10</div><div id="mapVoteChoices"></div></div></div>
-<div class="ov" id="menu"><div id="menuPanel">
- <h1>ARÈNE FPS</h1>
- <p id="menuTag">Survie en vagues &middot; boss toutes les 5 vagues</p>
-
- <div class="mgroup"><span class="mtitle">Mode de jeu</span>
-  <div class="modeRow">
-   <button id="modeSolo" class="on">&#127919; Solo &mdash; Vagues</button>
-   <button id="modeMp">&#127760; En ligne &mdash; Deathmatch</button>
-  </div>
-  <p id="mpn" style="margin:8px 2px 0;font-size:14px;opacity:.7"></p>
-  <div id="nameRow" style="display:none;margin:10px 2px 0;align-items:center;gap:10px"><label for="pname" style="font-size:14px;opacity:.85">Ton pseudo</label><input id="pname" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Pseudo" style="flex:1;min-width:0;padding:8px 10px;font-size:16px;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;outline:none"></div>
- </div>
-
- <div class="mgroup"><span class="mtitle">Difficulté</span>
-  <div class="diffRow" id="diffRow">
-   <button data-d="easy">&#128994; Facile<small>moins de PV ennemis</small></button>
-   <button data-d="normal" class="on">&#128308; Normal<small>équilibré</small></button>
-   <button data-d="hard">&#128293; Difficile<small>plus de PV et de vitesse</small></button>
-   <button data-d="expert">&#128165; Expert<small>ennemis blindés</small></button>
-  </div>
-  <p id="diffNote"></p>
- </div>
-
- <button id="playBtn">&#9654; LANCER LA PARTIE</button>
-
- <div class="menuFoot">
-  <button id="menuArmory">&#128295; Armurerie</button>
-  <button id="menuSettings">&#9881; Paramètres</button>
-  <button id="menuHelp">&#128273; Commandes</button>
- </div>
- <div class="keyGrid" id="keyGrid" style="display:none"></div>
- <p style="font-size:13px;opacity:.55;margin-top:14px">Le jeu capture la souris au lancement &mdash; Échap pour mettre en pause.</p>
- </div></div>
-<div class="ov" id="pause">
-<h1>PAUSE</h1>
-<div id="pauseButtons"><button id="resumeBtn">Reprendre</button><button id="settingsBtn">Paramètres</button><button id="cheatBtn">🧪 Cheats</button><button id="quitBtn">🚪 Quitter la partie</button></div>
-<p id="quitMsg"></p>
-</div>
-<div class="ov" id="settings" style="display:none;cursor:default">
-<div id="settingsPanel"><h1>PARAMÈTRES</h1>
-<div class="setting"><label for="uiScale">Taille de l'interface <span class="settingValue" id="uiScaleValue">100%</span></label><input id="uiScale" type="range" min="75" max="140" step="5" value="100"></div>
-<div class="setting"><label for="volume">Son <span class="settingValue" id="volumeValue">100%</span></label><input id="volume" type="range" min="0" max="100" step="5" value="100"></div>
-<div class="setting"><label for="sensitivity">Vitesse du viseur <span class="settingValue" id="sensitivityValue">100%</span></label><input id="sensitivity" type="range" min="25" max="200" step="5" value="100"></div>
-<div class="setting"><label>Qualité graphique</label><div class="selrow" id="qualityRow"><button data-q="low">Basse</button><button data-q="med">Moyenne</button><button data-q="high" class="on">Élevée</button></div></div>
-<div class="setting"><label class="chk"><input type="checkbox" id="fxBloom" checked> Bloom lumineux + étalonnage cinéma</label></div>
-<div class="setting"><label class="chk"><input type="checkbox" id="fxShadow" checked> Ombres portées haute qualité</label></div>
-<div class="setting"><label class="chk"><input type="checkbox" id="fxExtra" checked> Détail décoratif (sacs, pneus, cônes…)</label></div>
-<button id="settingsBack">Retour à la pause</button></div></div>
-<div class="ov" id="shop"><div id="shopPanel"><h1>🛒 SHOP</h1><div id="shopPoints">Points : 0</div><div class="shopGrid" id="shopGrid"></div><button id="shopClose">Fermer (B / Échap)</button></div></div>
-<div class="ov" id="armory"><div id="armoryPanel"><h1>🔧 ARMURERIE</h1><div id="armPoints">Points : 0</div>
- <div class="mgroup"><span class="mtitle">Arme</span><div class="armWeapons" id="armWeapons"></div>
-  <p style="font-size:12px;opacity:.6;margin:8px 2px 0">Clique sur le ★ d'une arme pour la définir comme arme de départ.</p>
-  <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button></div>
- <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
- <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
- <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
- <div class="mgroup"><span class="mtitle">Aperçu des stats</span><div id="armStats"></div></div>
- <button id="armoryClose">Fermer (retour au menu)</button></div></div>
-<div class="ov" id="cheat"><div id="cheatPanel"><h1>🧪 PANNEAU DE CHEATS</h1><div id="cheatStatus"></div><div id="cheatList"></div><button id="cheatClose">Fermer (Échap)</button></div></div>
-<div class="ov" id="over"><h1>GAME OVER</h1><p id="fs"></p><button id="again">Rejouer</button><button id="backMenu" style="background:#888">Changer de mode / difficulté</button></div>
 <script>window.onerror=function(m,s,l){var d=document.getElementById('err');d.style.display='block';d.textContent='Erreur JS : '+m+' (ligne '+l+')'}
 /* MODE SOLO UNIQUEMENT */
 document.addEventListener('DOMContentLoaded',()=>{
@@ -1037,45 +966,23 @@ const em={p:new R.MeshStandardMaterial({color:0x2a4a8a,roughness:.7}),b:new R.Me
   blade:new R.MeshStandardMaterial({color:0xdfe6ec,roughness:.18,metalness:1,envMapIntensity:1.6})};
 let wave=0,toSpawn=0,wt=1.5,spT=0,state='menu';
 const MAP_TIME=300; let mapTime=MAP_TIME;
-const MAP_VOTE_TIME=10;
-let mapVoteActive=false,mapVoteLeft=0,mapVote=null,mapVoteResultSent=false;
-let mpMapEndAt=0,mpVoteEndAt=0,mpClockOffset=0;
+
+
+let mpMapEndAt=0,mpClockOffset=0;
 function resetMapTimer(authoritativeEndAt){
  mapTime=MAP_TIME;
  if(mp)mpMapEndAt=Number.isFinite(authoritativeEndAt)?authoritativeEndAt:(Date.now()+MAP_TIME*1000);
 }
 function mpNow(){return Date.now()+mpClockOffset}
-function openMapVote(authoritativeVoteEndAt){
- if(!mp||mapVoteActive)return;
- mapVoteActive=true;mapVoteLeft=MAP_VOTE_TIME;mapVote=null;mapVoteResultSent=false;
- mpVoteEndAt=Number.isFinite(authoritativeVoteEndAt)?authoritativeVoteEndAt:(mpNow()+MAP_VOTE_TIME*1000);
- $('mapVote').style.display='flex';
- const box=$('mapVoteChoices');box.innerHTML='';
- MAPS.forEach((m,i)=>{if(i===mapIndex)return;const b=document.createElement('button');b.dataset.map=i;b.innerHTML=m.name+'<small>Choisir cette map</small>';b.onclick=e=>{e.stopPropagation();mapVote=i;updateMapVoteUI()};box.appendChild(b)});
- updateMapVoteUI();
-}
-function updateMapVoteUI(){
- if(!mapVoteActive)return;
- $('mapVoteTimer').textContent=Math.max(0,Math.ceil(mapVoteLeft));
- $('mapVoteInfo').textContent=mapVote==null?'Votez pour la prochaine map':'Vote enregistré : '+MAPS[mapVote].name;
- [...$('mapVoteChoices').children].forEach(b=>b.classList.toggle('on',+b.dataset.map===mapVote));
-}
 function finishMapChange(next,authoritativeEndAt){
  next=((next%MAPS.length)+MAPS.length)%MAPS.length;
- mapVoteActive=false;mapVote=null;mapVoteResultSent=false;$('mapVote').style.display='none';
  enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=2;
- applyMap(next,true);P.score=0;P.streak=0;P.points=0;wave=0;resetMapTimer(authoritativeEndAt);if(mp)respawnPos();
+ applyMap(next,true);P.score=0;P.streak=0;P.points=0;wave=0;
+ resetMapTimer(authoritativeEndAt);
+ if(mp)respawnPos();
  banner('NOUVELLE MAP · SCORE RÉINITIALISÉ',3,34);
 }
-function changeMapByTimer(){if(mp){openMapVote();return}finishMapChange((mapIndex+1)%MAPS.length)}
-function rotateMapForWave(nextWave){const next=Math.floor((nextWave-1)/5)%MAPS.length;if(next!==mapIndex)applyMap(next,true)}
-/* ---- DIFFICULTÉ (choisie dans l'écran de lancement) ---- */
-const DIFFS={
- easy:  {n:'Facile',  hp:.6, sp:.8, dmg:.6, cnt:.7,  pts:.5, note:'Les ennemis frappent moins fort et apparaissent en moins grand nombre. Bonus de points réduit.'},
- normal:{n:'Normal',  hp:1,  sp:1,  dmg:1,  cnt:1,   pts:1,  note:'L’expérience prévue : vagues de 6 à 16 ennemis, boss à 1800 PV.'},
- hard:  {n:'Difficile',hp:1.6,sp:1.22,dmg:1.5, cnt:1.35,pts:1.5, note:'Plus d’ennemis, plus rapides, 60% de PV en plus. Les dégâts reçus sont multipliés par 1.5.'},
- expert:{n:'Expert', hp:2.5, sp:1.45,dmg:2.1, cnt:1.7, pts:2.2, note:'Mode sans pitié : ennemis blindés et rapides. Attends les charges et vise la tête.'}
-};
+function changeMapByTimer(){finishMapChange((mapIndex+1)%MAPS.length)};
 let diffKey='normal',DF=DIFFS.normal;
 function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blade:!!blade,lunge:0,eh:boss?3.6:1.5,hp:Math.round((boss?1800:(blade?70+wave*14:90+wave*18))*DF.hp),alert:0,los:false,losT:0,cool:1,sd:1,cv:0,cvT:0,cp:{x:0,z:0},wp:null,dead:0,rm:0,fl:0,wp2:0,mov:0,sp:(boss?2.4:blade?Math.min(4.8+wave*.25,8.4):Math.min(3+wave*.15,5))*DF.sp};
   const add=(ge,m,x,y,z,hd)=>{const me=new R.Mesh(ge,m.clone());me.position.set(x,y,z);me.castShadow=true;me.userData={e,head:hd};g.add(me);e.parts.push(me);return me};
@@ -1224,25 +1131,9 @@ function update(dt){
   /* En Deathmatch, le timer est basé sur une échéance commune diffusée par le leader. */
   if(mp){
    mpTick(dt);
-   if(!mapVoteActive){
-    if(mpMapEndAt<=0)mpMapEndAt=mpNow()+MAP_TIME*1000;
-    mapTime=Math.max(0,(mpMapEndAt-mpNow())/1000);
-    if(mapTime<=0)changeMapByTimer();
-   }
-   if(mapVoteActive){
-    mapVoteLeft=Math.max(0,(mpVoteEndAt-mpNow())/1000);updateMapVoteUI();
-    if(mapVoteLeft<=0){
-     const ids=[myId];room.peers().forEach(p=>{if(!p.isMe&&p.presence&&p.presence.m===1)ids.push(p.peer)});
-     const leader=ids.slice().sort()[0];
-     if(leader===myId&&!mapVoteResultSent){
-      const counts={};if(mapVote!=null)counts[mapVote]=1;
-      room.peers().forEach(p=>{if(p.isMe||!p.presence||p.presence.m!==1)return;const v=p.presence.v;if(Number.isInteger(v)&&v!==mapIndex)counts[v]=(counts[v]||0)+1});
-      let best=null,bestN=-1;MAPS.forEach((m,i)=>{if(i===mapIndex)return;const n=counts[i]||0;if(n>bestN){bestN=n;best=i}});
-      if(best==null)best=(mapIndex+1)%MAPS.length;mapVoteResultSent=true;const endAt=mpNow()+MAP_TIME*1000;room.emit('mapVoteResult',{map:best,endAt});finishMapChange(best,endAt);
-     }
-    }
-   }
-   if(mapVoteActive){hud(dt,5);return}
+   if(mpMapEndAt<=0)mpMapEndAt=mpNow()+MAP_TIME*1000;
+   mapTime=Math.max(0,(mpMapEndAt-mpNow())/1000);
+   if(mapTime<=0)changeMapByTimer();
    if(P.dead)return
   }else{
    mapTime-=dt;if(mapTime<=0)changeMapByTimer();
@@ -1338,7 +1229,7 @@ function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.
  A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=mp?5:3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
   equip(mp?0:save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
   FXQ.tracers.concat(FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);$('kf').innerHTML='';$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
-  ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');mapVoteActive=false;mapVoteLeft=0;mapVote=null;mpMapEndAt=0;mpVoteEndAt=0;mpClockOffset=0;$('mapVote').style.display='none';syncMp()}
+  ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');mpMapEndAt=0;mpClockOffset=0;syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
 $('again').onclick=e=>{e.stopPropagation();newGame();lock()};$('shopClose').onclick=shopClose;setupSettings();setupMenu();
 document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement){if(state!=='over'){state='play';['menu','pause','settings','shop','cheat'].forEach(i=>$(i).style.display='none');$('hud').style.display='block'}}
@@ -1378,14 +1269,13 @@ function mpTick(dt){const seen=new Set();
  room.peers().forEach(p=>{if(p.isMe){if(p.sameTab)myId=p.peer;return}const q=p.presence;if(q.m!==1||typeof q.x!=='number')return;seen.add(p.peer);
   if(typeof q.ts==='number'){const sample=q.ts-Date.now();mpClockOffset=mpClockOffset*.85+sample*.15}
   if(q.l===1&&typeof q.te==='number'&&q.te>0){mpMapEndAt=q.te;mapTime=Math.max(0,(mpMapEndAt-mpNow())/1000)}
-  if(q.l===1&&typeof q.ve==='number'&&q.ve>0&&q.ve>mpNow()&&!mapVoteActive)openMapVote(q.ve);
   let r=remote.get(p.peer);if(!r){r=mkRemote(String(q.n||'Joueur').slice(0,16));r.parts.forEach(m=>m.userData.pl=p.peer);remote.set(p.peer,r)}
   const g=r.g.position,k2=Math.min(1,dt*12);r.sc=q.s|0;r.g.visible=q.a===1;g.x+=(q.x-g.x)*k2;g.y+=(q.y-g.y)*k2;g.z+=(q.z-g.z)*k2;r.g.rotation.y=+q.yaw||0;r.g.scale.y=q.c?.75:1});
  remote.forEach((r,id)=>{if(!seen.has(id)){scene.remove(r.g);r.g.children.forEach(c=>c.material&&c.material.map&&c.material.map.dispose());remote.delete(id)}});
  const ids=[myId];room.peers().forEach(p=>{if(!p.isMe&&p.presence&&p.presence.m===1)ids.push(p.peer)});
  const leader=ids.slice().sort()[0];
  if(leader===myId&&mpMapEndAt<=0)mpMapEndAt=Date.now()+MAP_TIME*1000;
- room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,v:mapVoteActive&&Number.isInteger(mapVote)?mapVote:null,te:mpMapEndAt,ve:mpVoteEndAt,ts:Date.now(),l:leader===myId?1:0});
+ room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,te:mpMapEndAt,ts:Date.now(),l:leader===myId?1:0});
  if(P.hp<=0&&!P.dead){P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
  if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;refill();P.sh=T+2;banner('BOUCLIER · 2 s',2,30)}
  const shOn=(P.sh||0)>T;if(shEl)shEl.style.display=shOn?'block':'none'}
@@ -1394,7 +1284,6 @@ async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.u
  room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
  room.on('kill',m=>{const d=m.data;if(!mp||!d)return;banner(nameOf(d.k)+' ➜ '+nameOf(d.v),2,24);if(d.k===myId&&d.v!==myId)P.score+=100});
  room.on('shot',m=>{if(!mp||m.isMe)return;const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12)});
- room.on('mapVoteResult',m=>{if(!mp||!m.data||!Number.isInteger(m.data.map))return;finishMapChange(m.data.map,m.data.endAt)});
  setInterval(()=>{$('mpn').textContent=pubRoom.peers().filter(p=>!p.isMe&&p.presence.m===1).length+' autre(s) joueur(s) en ligne'},1000)}
 /* Choix du pseudo (affiché seulement en mode En ligne, mémorisé dans le navigateur) */
 (function(){const inp=$('pname'),row=$('nameRow');if(!inp)return;
