@@ -983,6 +983,13 @@ function finishMapChange(next,authoritativeEndAt){
  banner('NOUVELLE MAP · SCORE RÉINITIALISÉ',3,34);
 }
 function changeMapByTimer(){finishMapChange((mapIndex+1)%MAPS.length)};
+/* ---- DIFFICULTÉ ---- */
+const DIFFS={
+ easy:{n:'Facile',hp:.6,sp:.8,dmg:.6,cnt:.7,pts:.5,note:'Les ennemis frappent moins fort et apparaissent en moins grand nombre. Bonus de points réduit.'},
+ normal:{n:'Normal',hp:1,sp:1,dmg:1,cnt:1,pts:1,note:'L’expérience prévue : vagues de 6 à 16 ennemis, boss à 1800 PV.'},
+ hard:{n:'Difficile',hp:1.6,sp:1.22,dmg:1.5,cnt:1.35,pts:1.5,note:'Plus d’ennemis, plus rapides, 60% de PV en plus. Les dégâts reçus sont multipliés par 1.5.'},
+ expert:{n:'Expert',hp:2.5,sp:1.45,dmg:2.1,cnt:1.7,pts:2.2,note:'Mode sans pitié : ennemis blindés et rapides. Attends les charges et vise la tête.'}
+};
 let diffKey='normal',DF=DIFFS.normal;
 function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blade:!!blade,lunge:0,eh:boss?3.6:1.5,hp:Math.round((boss?1800:(blade?70+wave*14:90+wave*18))*DF.hp),alert:0,los:false,losT:0,cool:1,sd:1,cv:0,cvT:0,cp:{x:0,z:0},wp:null,dead:0,rm:0,fl:0,wp2:0,mov:0,sp:(boss?2.4:blade?Math.min(4.8+wave*.25,8.4):Math.min(3+wave*.15,5))*DF.sp};
   const add=(ge,m,x,y,z,hd)=>{const me=new R.Mesh(ge,m.clone());me.position.set(x,y,z);me.castShadow=true;me.userData={e,head:hd};g.add(me);e.parts.push(me);return me};
