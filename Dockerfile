@@ -15,4 +15,5 @@ COPY . .
 EXPOSE 3000
 
 # Start the static file server
-CMD ["npx", "serve", "-s", ".", "-l", "0.0.0.0:3000"]
+# -l 3000: listen on port 3000 (Render/Docker will bind to 0.0.0.0 automatically)
+CMD ["npx", "serve", "-s", ".", "-l", "3000"]
