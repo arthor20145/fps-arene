@@ -531,7 +531,7 @@ function updateCheatUI(){
 const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','KeyB','KeyA'];
 let konamiPos=0,cheatUnlocked=false;
 function konamiPress(e){
-  if(cheatUnlocked)return;
+  if(cheatUnlocked||mp)return;
   const c=e.code;
   if(c===KONAMI[konamiPos]){
     konamiPos++;
@@ -545,7 +545,7 @@ function konamiPress(e){
 }
 addEventListener('keydown',konamiPress);
 function cheatOpen(){
-  if(!liveGame())return;
+  if(mp||!liveGame())return;
   if(!cheatUnlocked){banner('🔒 VERROUILLÉ',1.6,26);return}
   $('pause').style.display='none';
   state='pause';held=0;adsHeld=0;
@@ -1237,9 +1237,10 @@ function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.
  Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};
  /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
  owned=save.own.slice();owned[save.start]=true;owned[0]=true;owned[1]=true;owned[5]=true;
+ if(mp){owned=owned.map(()=>true);cheats.god=cheats.infiniteAmmo=cheats.oneShot=false;cheatUnlocked=false;konamiPos=0;$('cheat').style.display='none'}
  W.forEach((w,i)=>{if(owned[i]&&!w.knife)A[i]={ammo:w.mag,res:w.mag*4}});
- A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
-  equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
+ A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=mp?5:3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
+  equip(mp?0:save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
   FXQ.tracers.concat(FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);$('kf').innerHTML='';$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
   ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
