@@ -1058,7 +1058,7 @@ function finishMapChange(next){
  next=((next%MAPS.length)+MAPS.length)%MAPS.length;
  mapVoteActive=false;mapVote=null;mapVoteResultSent=false;$('mapVote').style.display='none';
  enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=2;
- applyMap(next,true);P.score=0;P.streak=0;P.points=0;wave=0;resetMapTimer();
+ applyMap(next,true);P.score=0;P.streak=0;P.points=0;wave=0;resetMapTimer();if(mp)respawnPos();
  banner('NOUVELLE MAP · SCORE RÉINITIALISÉ',3,34);
 }
 function changeMapByTimer(){if(mp){openMapVote();return}finishMapChange((mapIndex+1)%MAPS.length)}
@@ -1156,7 +1156,7 @@ function enemyFlash(p){const m=eflashes.find(x=>!x.visible);if(!m)return;m.visib
 for(let i=0;i<8;i++){const m=new R.Sprite(new R.SpriteMaterial({map:flashTex,blending:R.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));m.visible=false;m.userData={l:0};scene.add(m);eflashes.push(m)}
 function killfeed(txt,color){const k=$('kf');if(!k)return;const d=document.createElement('b');d.textContent=txt;if(color)d.style.borderLeftColor=color;k.appendChild(d);
  while(k.children.length>5)k.removeChild(k.firstChild);setTimeout(()=>{if(d.parentNode)d.parentNode.removeChild(d)},4200)}
-function startWave(){wave++;rotateMapForWave(wave);const boss=wave%5===0;toSpawn=boss?1:Math.max(1,Math.round((4+wave*2)*DF.cnt));banner(boss?'⚠ BOSS : LE MASTODONTE ⚠':'VAGUE '+wave+' · '+DF.n.toUpperCase(),boss?3.5:2)}
+function startWave(){wave++;if(!mp)rotateMapForWave(wave);const boss=wave%5===0;toSpawn=boss?1:Math.max(1,Math.round((4+wave*2)*DF.cnt));banner(boss?'⚠ BOSS : LE MASTODONTE ⚠':'VAGUE '+wave+' · '+DF.n.toUpperCase(),boss?3.5:2)}
 /* ================= GRENADES, EXPLOSIONS, FRAPPE ================= */
 const gg=new R.SphereGeometry(.12,8,8),gmt=new R.MeshStandardMaterial({color:0x2a4a2a});
 for(let i=0;i<8;i++){const m=new R.Mesh(gg,gmt);m.visible=false;m.castShadow=true;m.userData={v:new R.Vector3(),f:0};scene.add(m);gr.push(m)}
@@ -1287,12 +1287,19 @@ const ADS_BACK=[-.22,0,0,0,0,0];
  for(let i=picks.length-1;i>=0;i--){const q=picks[i];q.m.rotation.y+=dt*2;q.l-=dt;
   if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;owned[wi]=true;save.own[wi]=true;saveGame();if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+([2,3,4,5,6][Math.max(0,[0,2,3,4,5].indexOf(wi))]||6),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
   if(q.l<=0||Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){scene.remove(q.m);picks.splice(i,1)}}
- updParts(dt);updFX(dt);updGren(dt);const alive=enemies.filter(e=>!e.dead).length;
+ updParts(dt);updFX(dt);updGren(dt);
+ /* En Deathmatch : aucun bot, aucune vague et aucun boss. */
+ if(!mp){
+  const alive=enemies.filter(e=>!e.dead).length;
   if(wt>0){wt-=dt;if(wt<=0)startWave()}
     else if(toSpawn>0){spT-=dt;if(spT<=0&&alive<Math.min(5+wave,12)){const bossNow=wave%5===0;
      const bl=!bossNow&&wave>=3&&rnd()<Math.min(.45,.2+wave*.03);
      spawn(bossNow,bl);toSpawn--;spT=.8;if(toSpawn===0)banner2(bossNow?'⚠ BOSS EN APPROCHE':'COMBAT ENGAGÉ',2)}}
   else if(alive==0){wt=4;P.score+=200;P.hp=Math.min(P.maxHp,P.hp+25);refill();banner('VAGUE '+wave+' TERMINÉE',2.5,40);killfeed('✔ VAGUE '+wave+' NETTOYÉE  +'+200,'#6cc7ff')}
+ }else{
+  if(enemies.length){enemies.forEach(e=>scene.remove(e.g));enemies.length=0}
+  toSpawn=0;wt=0;spT=0;
+ }
  hud(dt,5+(w=>{const mv=hs>1?2:1;return(w.spr*mv*(adsT>.5?.4:1)+heat)*700})(W[cur]));
  if(P.hp<=0&&!mp){state='over';$('shop').style.display='none';document.exitPointerLock();
   /* les points non dépensés au shop sont mis de côté pour l'armurerie */
