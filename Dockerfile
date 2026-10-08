@@ -14,6 +14,5 @@ COPY . .
 # Expose the port Render assigns (or default to 3000)
 EXPOSE 3000
 
-# Start the static file server
-# -l 3000: listen on port 3000 (Render/Docker will bind to 0.0.0.0 automatically)
-CMD ["npx", "serve", "-s", ".", "-l", "3000"]
+# Start the game server (serves files + WebSocket multiplayer)
+CMD ["node", "server.js"]
