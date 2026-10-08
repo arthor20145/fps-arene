@@ -1227,7 +1227,7 @@ function update(dt){
       const counts={};if(mapVote!=null)counts[mapVote]=1;
       room.peers().forEach(p=>{if(p.isMe||!p.presence||p.presence.m!==1)return;const v=p.presence.v;if(Number.isInteger(v)&&v!==mapIndex)counts[v]=(counts[v]||0)+1});
       let best=null,bestN=-1;MAPS.forEach((m,i)=>{if(i===mapIndex)return;const n=counts[i]||0;if(n>bestN){bestN=n;best=i}});
-      if(best==null)best=(mapIndex+1)%MAPS.length;mapVoteResultSent=true;room.emit('mapVoteResult',{map:best});
+      if(best==null)best=(mapIndex+1)%MAPS.length;mapVoteResultSent=true;room.emit('mapVoteResult',{map:best});finishMapChange(best);
      }
     }
    }
