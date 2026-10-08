@@ -1,0 +1,16 @@
+{
+  "name": "fps-arene",
+  "version": "1.1.0",
+  "description": "FPS Arena - solo (vagues, boss, boutique) + deathmatch en ligne",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["fps", "arena", "threejs", "webgl", "multiplayer"],
+  "author": "arthor20145",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.0"
+  }
+}
