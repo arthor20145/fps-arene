@@ -1,18 +1,12 @@
-FROM node:18-alpine
-
-# Set working directory
+FROM node:20-alpine
 WORKDIR /app
 
-# Copy package files and install dependencies
-# Using serve as a static file server for the HTML/JS/CSS game
 COPY package.json package-lock.json* ./
-RUN npm install --production
+RUN npm install --omit=dev
 
-# Copy the game files
-COPY . .
+COPY server.js index.html ./
 
-# Expose the port Render assigns (or default to 3000)
+# Render fournit la variable PORT automatiquement
+ENV NODE_ENV=production
 EXPOSE 3000
-
-# Start the game server (serves files + WebSocket multiplayer)
 CMD ["node", "server.js"]

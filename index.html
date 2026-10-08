@@ -216,7 +216,33 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.onerror('Three.js n\'a pas pu être chargé (connexion internet ?)')"></script>
 <script>window.__fx=1;</script>
-<script>window.claude={use:async t=>{try{return{peers:()=>[],presence:()=>({m:0}),emit:()=>{},on:()=>{}}catch(e){}}};}</script>
+<script>
+/* Client "room" WebSocket : fournit window.claude.use('room') avec le serveur Node (Render). */
+(function(){
+ var ws=null,myId=null,local={m:0},others=new Map(),handlers={},ready=null,lastSend=0,timer=null,retry=0;
+ function fire(name,msg){(handlers[name]||[]).forEach(function(f){try{f(msg)}catch(e){console.error(e)}})}
+ function raw(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o))}
+ var room={
+  peers:function(){var a=[{isMe:true,sameTab:true,peer:myId,presence:local}];others.forEach(function(p,id){a.push({isMe:false,peer:id,presence:p})});return a},
+  presence:function(o){local=o;var n=performance.now();if(n-lastSend>=50){lastSend=n;raw({type:'presence',presence:o})}else if(!timer){timer=setTimeout(function(){timer=null;lastSend=performance.now();raw({type:'presence',presence:local})},50)}},
+  emit:function(name,data){raw({type:'emit',name:name,data:data})},
+  on:function(name,f){(handlers[name]=handlers[name]||[]).push(f)}
+ };
+ function connect(){
+  var url=(location.protocol==='https:'?'wss://':'ws://')+location.host;
+  ws=new WebSocket(url);
+  ws.onmessage=function(e){var m;try{m=JSON.parse(e.data)}catch(x){return}
+   if(m.type==='welcome'){myId=m.id;others.clear();(m.peers||[]).forEach(function(p){others.set(p.peer,p.presence||{m:0})});retry=0;raw({type:'presence',presence:local});if(ready){ready(room);ready=null}}
+   else if(m.type==='presence')others.set(m.peer,m.presence||{m:0});
+   else if(m.type==='leave')others.delete(m.peer);
+   else if(m.type==='event')fire(m.name,{peer:m.peer,isMe:m.peer===myId,data:m.data});
+  };
+  ws.onclose=function(){others.clear();setTimeout(connect,Math.min(1000*Math.pow(2,retry++),10000))};
+  ws.onerror=function(){try{ws.close()}catch(e){}};
+ }
+ window.claude={use:function(){return new Promise(function(res){ready=res;connect();setTimeout(function(){if(ready){ready(null);ready=null}},8000)})}};
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" onerror="window.__fx=0"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" onerror="window.__fx=0"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" onerror="window.__fx=0"></script>
