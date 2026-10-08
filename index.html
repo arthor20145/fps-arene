@@ -321,8 +321,9 @@ renderer.setSize(innerWidth,innerHeight);
 /* ================= MAP ================= */
 const B=100,K=B/60,boxes=[],bm=[];
 let mapIndex=0;
-const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52}];
-function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true}scene.background=new R.Color(m.sky);if(scene.fog)scene.fog.color.setHex(m.sky);for(const q of bm){if(q&&q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);else if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}if(announce)banner('MAP : '+m.name,2.2,30)}
+const smallMapMeshes=[],smallMapBoxes=[];
+const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8}];
+function applyMap(index,announce){const old=mapIndex;mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=small?12:30;scene.fog.far=small?52:210}for(const q of bm){if(q)q.visible=!small;if(q&&q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);else if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}if(typeof decor!=='undefined')decor.visible=!small;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+(small?' · PETITE MAP':''),2.2,30)}
 
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function addBox(x,z,w,h,d,m){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);
@@ -381,6 +382,16 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   const p=dec(new R.Mesh(new R.BoxGeometry(.09,1.7,.09),mMetal),x,.85,z,lc()*6.28);
   for(let k=0;k<5;k++){const w=new R.Mesh(new R.BoxGeometry(2.6,.05,.05),mMetal);w.position.set(0,.2+k*.3,0);p.add(w)}
   contact(x,z,3,3)}
+ /* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
+ const smallWallMat=new R.MeshStandardMaterial({color:0x26313b,roughness:.62,metalness:.72,envMapIntensity:.8});
+ const smallFloorMat=new R.MeshStandardMaterial({color:0x171b21,roughness:.82,metalness:.28,envMapIntensity:.45});
+ const smallGlowMat=new R.MeshStandardMaterial({color:0x19a8a8,emissive:0x087777,emissiveIntensity:2.2,roughness:.35,metalness:.45});
+ function addSmallBox(x,z,w,h,d,m=smallWallMat){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);smallMapMeshes.push(me);smallMapBoxes.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
+ const smallFloor=new R.Mesh(new R.PlaneGeometry(44,44),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
+ addSmallBox(0,-22,44,5,1);addSmallBox(0,22,44,5,1);addSmallBox(-22,0,1,5,44);addSmallBox(22,0,1,5,44);
+ [[-10,-9,3,4,10],[10,9,3,4,10],[-10,9,8,2,3],[10,-9,8,2,3],[-8,0,3,2,5],[8,0,3,2,5],[0,-10,5,2,3],[0,10,5,2,3]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
+ for(const z of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(38,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
+ for(const x of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,38),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
  /* poussières flottantes */
  const dust=(()=>{const n=900,pa=new Float32Array(n*3);for(let i=0;i<n;i++){pa[i*3]=(rnd()-.5)*110*K;pa[i*3+1]=rnd()*14;pa[i*3+2]=(rnd()-.5)*110*K}
   const g=new R.BufferGeometry();g.setAttribute('position',new R.BufferAttribute(pa,3));
@@ -388,7 +399,8 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   const p=new R.Points(g,m);scene.add(p);return p})();
 
 /* collisions cercle/AABB, retourne la hauteur du sol sous le point */
-function collide(p,r){let g=0;for(const b of boxes){if(!(p.x>b.x0-r&&p.x<b.x1+r&&p.z>b.z0-r&&p.z<b.z1+r))continue;
+function activeBoxes(){return mapIndex===3?smallMapBoxes:boxes}
+function collide(p,r){let g=0;for(const b of activeBoxes()){if(!(p.x>b.x0-r&&p.x<b.x1+r&&p.z>b.z0-r&&p.z<b.z1+r))continue;
  if(p.y>=b.top-.35){g=Math.max(g,b.top);continue}
  const dx=Math.min(p.x-(b.x0-r),b.x1+r-p.x),dz=Math.min(p.z-(b.z0-r),b.z1+r-p.z);
  if(dx<dz)p.x+=p.x<b.cx?-dx:dx;else p.z+=p.z<b.cz?-dz:dz}return g}
@@ -1047,7 +1059,7 @@ function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blad
   add(eg.c,em.s,0,1.5,0,1);add(eg.h,em.s,0,1.68,0,1);add(eg.helm,em.vest,0,1.8,.02);add(eg.vis,em.p,0,1.7,-.19);
   e.visor=e.parts[e.parts.length-1];e.visor.material=new R.MeshStandardMaterial({color:0x200505,emissive:boss?0xff2a12:blade?0xff9500:0xff3a1a,emissiveIntensity:boss?2.4:blade?2:1.4,roughness:.2,metalness:.6});
   if(boss){g.scale.setScalar(2.4);e.parts.forEach(p=>{if(p.material.emissive&&!p.material.emissive.getHex()){p.material.emissive.setHex(0x220505);p.material.emissiveIntensity=1}})}
-  for(let i=0;i<12;i++){const a=rnd()*6.28,r=(40+rnd()*15)*1.3;g.position.set(Math.max(-(B-4),Math.min(B-4,Math.cos(a)*r)),0,Math.max(-(B-4),Math.min(B-4,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>28)break}
+  for(let i=0;i<12;i++){const a=rnd()*6.28,r=mapIndex===3?(14+rnd()*5):(40+rnd()*15)*1.3,lim=mapIndex===3?20:B-4;g.position.set(Math.max(-lim,Math.min(lim,Math.cos(a)*r)),0,Math.max(-lim,Math.min(lim,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>(mapIndex===3?12:28))break}
   scene.add(g);enemies.push(e);if(boss)sfx.roar();else if(blade)killfeed('⚠ ASSAUT AU COUTEAU !','#ff9b2a')}
 function flashEnemy(e){if(e.fl>0)return;for(const p of e.parts)p.material.emissive.setHex(0xffffff)}
 function updEnemyFlash(e,dt){
@@ -1095,7 +1107,7 @@ function updEnemy(e,dt){const p=e.g.position,dx=P.pos.x-p.x,dz=P.pos.z-p.z,d=Mat
  if((e.losT-=dt)<=0){e.losT=.25+rnd()*.1;ray.set(v1.set(p.x,e.eh,p.z),v2.set(dx,P.pos.y+P.hh-e.eh,dz).normalize());ray.far=d;e.los=d<55&&ray.intersectObjects(bm).length==0}
  if(e.los)e.alert=4;else e.alert-=dt;
  let mx=0,mz=0,sp=e.sp,fx=dx,fz=dz;
- if(e.hp<35&&!e.cv&&e.alert>0&&T>e.cvT){let bb=null,bd=1e9;for(const b of boxes){const q=Math.hypot(b.cx-p.x,b.cz-p.z);if(q<bd&&b.r<12&&Math.abs(b.cx)<55){bd=q;bb=b}}
+ if(e.hp<35&&!e.cv&&e.alert>0&&T>e.cvT){let bb=null,bd=1e9;for(const b of activeBoxes()){const q=Math.hypot(b.cx-p.x,b.cz-p.z);if(q<bd&&b.r<12&&Math.abs(b.cx)<55){bd=q;bb=b}}
   if(bb){const ux=bb.cx-P.pos.x,uz=bb.cz-P.pos.z,ul=Math.hypot(ux,uz)||1;e.cp={x:bb.cx+ux/ul*(bb.r+1.5),z:bb.cz+uz/ul*(bb.r+1.5)};e.cv=1;e.cvT=T+10}}
  if(e.cv&&T>e.cvT-4)e.cv=0;
  if(e.cv){const cx=e.cp.x-p.x,cz=e.cp.z-p.z,cd=Math.hypot(cx,cz);if(cd>.6){mx=cx/cd;mz=cz/cd;sp*=1.3}}
@@ -1137,7 +1149,7 @@ function callStrike(){if((P.sh||0)>T||strikes<=0)return;strikes--;banner('FRAPPE
 function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.position,nx=p.x+u.v.x*dt,nz=p.z+u.v.z*dt;u.v.y-=20*dt;p.addScaledVector(u.v,dt);
  const g=collide(p,.15);if(Math.abs(p.x-nx)>1e-4)u.v.x*=-.5;if(Math.abs(p.z-nz)>1e-4)u.v.z*=-.5;
  if(p.y<=g+.12){p.y=g+.12;if(u.v.y<0)u.v.y*=-.4;if(Math.abs(u.v.y)<.5)u.v.y=0;u.v.x*=.85;u.v.z*=.85}
- p.x=Math.max(-59,Math.min(59,p.x));p.z=Math.max(-59,Math.min(59,p.z));
+ const lim=mapIndex===3?20:59;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
  if((u.f-=dt)<=0){m.visible=false;explode(p,8,160)}});
  for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200);air.splice(i,1)}}}
 /* ================= HUD ================= */
@@ -1296,7 +1308,7 @@ function mkRemote(name){const g=new R.Group(),parts=[];
  const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
-function respawnPos(){for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*(2*B-20),0,(rnd()-.5)*(2*B-20));if(boxes.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
+function respawnPos(){const lim=mapIndex===3?18:B-10,bs=activeBoxes();for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*2*lim,0,(rnd()-.5)*2*lim);if(bs.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
 const shEl=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 140px 40px rgba(70,170,255,.6);border:3px solid rgba(120,200,255,.5)';document.body.appendChild(d);return d})();
 function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
 function mpTick(dt){const seen=new Set();
