@@ -1,0 +1,20 @@
+{
+  "name": "fps-arene",
+  "version": "1.0.0",
+  "description": "FPS Arena solo game - waves, boss, shop",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -s . -l 0.0.0.0:3000"
+  },
+  "keywords": [
+    "fps",
+    "arena",
+    "threejs",
+    "webgl"
+  ],
+  "author": "arthor20145",
+  "license": "MIT",
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
