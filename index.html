@@ -1157,7 +1157,6 @@ let bnT=0,vig=0;const rc=$('radar').getContext('2d');
 function banner(t,d=2,s=44){const b=$('bn');b.textContent=t;b.style.fontSize=s+'px';b.style.opacity=1;bnT=d}
 function banner2(t,d=2){const b=$('banner2');b.textContent=t;b.style.opacity=1;b.dataset.t=d}
 function hud(dt,gap){
-  if(state==='play' && !mp){mapTime-=dt;if(mapTime<=0)changeMapByTimer()}
   const set=(id,x,y)=>$(id).style.transform=`translate(${x},${y})`;
   set('ct','0',`calc(-100% - ${gap}px)`);set('cb2','0',`${gap}px`);set('cl',`calc(-100% - ${gap}px)`,'0');set('cr',`${gap}px`,'0');
   const th=(adsT>.8?1:2)*(P.hh<1.4?1.4:1);$('ct').style.height=$('cb2').style.height=(7*th)+'px';$('cl').style.width=$('cr').style.width=(7*th)+'px';
@@ -1190,7 +1189,13 @@ function hud(dt,gap){
   if(mp){rc.fillStyle='#4af';remote.forEach(r=>{if(!r.g.visible)return;const dx=r.g.position.x-P.pos.x,dz=r.g.position.z-P.pos.z,x=(dx*cs-dz*sn)*rs,y=(dx*sn+dz*cs)*rs;if(x*x+y*y<3364)rc.fillRect(60+x-2,60+y-2,4,4)})}
   rc.restore()}
 /* ================= BOUCLE DE JEU ================= */
-function update(dt){if(mp){mpTick(dt);if(P.dead)return}
+function update(dt){
+  /* Timer de map : géré directement dans la boucle de jeu pour garantir un décompte réel. */
+  if(!mp){
+    mapTime-=dt;
+    if(mapTime<=0){changeMapByTimer();}
+  }
+  if(mp){mpTick(dt);if(P.dead)return}
  const f=(k.KeyW?1:0)-(k.KeyS?1:0),s=(k.KeyD?1:0)-(k.KeyA?1:0),crouch=k.ControlLeft||k.KeyC,ads=adsHeld;
  const sprint=k.ShiftLeft&&f>0&&!crouch&&!ads&&stam>.05,spd=(crouch?2.6:sprint?9:5.5)*(ads?.6:1)*(cur==4?.7:1)*P.speedMul;
   stam=Math.max(0,Math.min(1,stam+(sprint?-dt*.28:dt*.22)));
