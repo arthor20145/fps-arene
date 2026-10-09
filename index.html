@@ -1026,8 +1026,8 @@ const em={p:new R.MeshStandardMaterial({color:0x2a4a8a,roughness:.7}),b:new R.Me
   k:new R.MeshStandardMaterial({color:0x40202a,roughness:.72,metalness:.1,envMapIntensity:.5}),
   blade:new R.MeshStandardMaterial({color:0xdfe6ec,roughness:.18,metalness:1,envMapIntensity:1.6})};
 let wave=0,toSpawn=0,wt=1.5,spT=0,state='menu';
-const MAP_TIME=300; let mapTime=MAP_TIME;
-function resetMapTimer(){mapTime=MAP_TIME}
+const MAP_TIME=300; let mapTime=MAP_TIME,mpMapEndAt=0,mpMapIndex=-1;
+function resetMapTimer(){mapTime=MAP_TIME;mpMapEndAt=mp?Date.now()+MAP_TIME*1000:0;mpMapIndex=mapIndex}
 function changeMapByTimer(){
   const next=(mapIndex+1)%MAPS.length;
   enemies.forEach(e=>scene.remove(e.g)); enemies.length=0; toSpawn=0; spT=0; wt=2;
@@ -1195,7 +1195,7 @@ function update(dt){
     mapTime-=dt;
     if(mapTime<=0){changeMapByTimer();}
   }
-  if(mp){mpTick(dt);if(P.dead)return}
+  if(mp){mpTick(dt);mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000);if(mapTime<=0&&mpMapEndAt===0)mapTime=MAP_TIME;if(P.dead)return}
  const f=(k.KeyW?1:0)-(k.KeyS?1:0),s=(k.KeyD?1:0)-(k.KeyA?1:0),crouch=k.ControlLeft||k.KeyC,ads=adsHeld;
  const sprint=k.ShiftLeft&&f>0&&!crouch&&!ads&&stam>.05,spd=(crouch?2.6:sprint?9:5.5)*(ads?.6:1)*(cur==4?.7:1)*P.speedMul;
   stam=Math.max(0,Math.min(1,stam+(sprint?-dt*.28:dt*.22)));
@@ -1321,7 +1321,7 @@ function mpTick(dt){const seen=new Set();
   let r=remote.get(p.peer);if(!r){r=mkRemote(String(q.n||'Joueur').slice(0,16));r.parts.forEach(m=>m.userData.pl=p.peer);remote.set(p.peer,r)}
   const g=r.g.position,k2=Math.min(1,dt*12);r.sc=q.s|0;r.g.visible=q.a===1;g.x+=(q.x-g.x)*k2;g.y+=(q.y-g.y)*k2;g.z+=(q.z-g.z)*k2;r.g.rotation.y=+q.yaw||0;r.g.scale.y=q.c?.75:1});
  remote.forEach((r,id)=>{if(!seen.has(id)){scene.remove(r.g);r.g.children.forEach(c=>c.material&&c.material.map&&c.material.map.dispose());remote.delete(id)}});
- room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0});
+ room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,mt:mpMapEndAt,mi:mapIndex});
  if(P.hp<=0&&!P.dead){P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
  if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;refill();P.sh=T+2;banner('BOUCLIER · 2 s',2,30)}
  const shOn=(P.sh||0)>T;if(shEl)shEl.style.display=shOn?'block':'none'}
