@@ -321,9 +321,9 @@ renderer.setSize(innerWidth,innerHeight);
 /* ================= MAP ================= */
 const B=100,K=B/60,boxes=[],bm=[];
 let mapIndex=0;
-const smallMapMeshes=[],smallMapBoxes=[],customMapMeshes=Array.from({length:8},()=>[]),customMapBoxes=Array.from({length:8},()=>[]);
-const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x45494b,wall:0x3a3f42,sky:0x414b52,accent:0xb94e1b},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8},{name:'FORÊT OUBLIÉE',ground:0x263b27,wall:0x30452d,sky:0x15251b,accent:0x587447},{name:'CENTRE-VILLE',ground:0x55545a,wall:0x36383e,sky:0x303746,accent:0xb45b39},{name:'BASE ARCTIQUE',ground:0x9aaeba,wall:0x657986,sky:0x9eb8c8,accent:0x4bd5e8},{name:'TEMPLE ANCIEN',ground:0x78664b,wall:0x544631,sky:0x554735,accent:0xc5a15b}];
-function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;const scales=[1,.7,1.22,.36,.5,.9,.36,1.1],fogNear=[30,22,38,18,18,28,16,34],fogFar=[210,125,270,92,145,210,105,245];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true;const sc=scales[mapIndex]||1;ground.scale.set(sc,1,sc)}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=fogNear[mapIndex]||25;scene.fog.far=fogFar[mapIndex]||180}for(const q of bm){if(q){q.visible=mapIndex===0;if(q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}}if(typeof decor!=='undefined')decor.visible=mapIndex===0;for(let i=0;i<customMapMeshes.length;i++)for(const q of customMapMeshes[i])q.visible=i===mapIndex;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+' · '+(['GRANDE','MOYENNE','GRANDE','MOYENNE','MOYENNE','GRANDE','PETITE','TRÈS GRANDE'][mapIndex]),2.2,30)}
+const smallMapMeshes=[],smallMapBoxes=[];
+const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8}];
+function applyMap(index,announce){const old=mapIndex;mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=small?12:30;scene.fog.far=small?52:210}for(const q of bm){if(q)q.visible=!small;if(q&&q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);else if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}if(typeof decor!=='undefined')decor.visible=!small;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+(small?' · PETITE MAP':''),2.2,30)}
 
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function addBox(x,z,w,h,d,m){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);
@@ -382,219 +382,16 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   const p=dec(new R.Mesh(new R.BoxGeometry(.09,1.7,.09),mMetal),x,.85,z,lc()*6.28);
   for(let k=0;k<5;k++){const w=new R.Mesh(new R.BoxGeometry(2.6,.05,.05),mMetal);w.position.set(0,.2+k*.3,0);p.add(w)}
   contact(x,z,3,3)}
- /* ---- deux layouts supplémentaires réellement différents ---- */
-const desertMat=new R.MeshStandardMaterial({color:0x9b7546,roughness:1}),rockMat=new R.MeshStandardMaterial({color:0x6b5237,roughness:1});
-// Sol industriel : béton sombre texturé, traces de pneus, joints et taches d'huile (pas de neige).
-const indConcreteTex=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.fillStyle='#45494b';g.fillRect(0,0,512,512);let seed=9182;const rand=()=>((seed=(seed*16807)%2147483647)-1)/2147483646;for(let i=0;i<4200;i++){const v=45+Math.floor(rand()*38);g.fillStyle=`rgba(${v},${v+2},${v+3},${.08+rand()*.22})`;g.fillRect(rand()*512,rand()*512,1+rand()*8,1+rand()*5)}for(let i=0;i<38;i++){const x=rand()*512,y=rand()*512,r=5+rand()*35,gr=g.createRadialGradient(x,y,1,x,y,r);gr.addColorStop(0,'rgba(12,14,15,.34)');gr.addColorStop(1,'rgba(12,14,15,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}g.strokeStyle='rgba(22,24,25,.45)';g.lineWidth=2;for(let i=0;i<=8;i++){g.beginPath();g.moveTo(i*64,0);g.lineTo(i*64,512);g.stroke();g.beginPath();g.moveTo(0,i*64);g.lineTo(512,i*64);g.stroke()}const t=new R.CanvasTexture(c);t.wrapS=t.wrapT=R.RepeatWrapping;t.repeat.set(4,4);t.colorSpace=R.SRGBColorSpace;return t})();
-const indFloorMat=new R.MeshStandardMaterial({color:0xffffff,map:indConcreteTex,roughness:.96,metalness:.04}),indWallMat=new R.MeshStandardMaterial({color:0x555b5e,roughness:.72,metalness:.48}),indAccentMat=new R.MeshStandardMaterial({color:0xb94e1b,roughness:.78,metalness:.12}),indYellowMat=new R.MeshStandardMaterial({color:0xd4a51d,roughness:.82,metalness:.08}),indDarkMat=new R.MeshStandardMaterial({color:0x24282b,roughness:.8,metalness:.45}),indRustMat=new R.MeshStandardMaterial({color:0x754329,roughness:.9,metalness:.25});
-function customBox(mi,x,z,w,h,d,material,collide=true){const me=new R.Mesh(new R.BoxGeometry(w,h,d),material);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me);if(collide)customMapBoxes[mi].push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
-function customFloor(mi,size,material){const me=new R.Mesh(new R.PlaneGeometry(size,size),material);me.rotation.x=-Math.PI/2;me.position.y=.015;me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me)}
-// DÉSERT : terrain moyen, canyons et ruines en grès.
-customFloor(1,140,desertMat);
-for(const a of [[0,-70,140,7,2],[0,70,140,7,2],[-70,0,2,7,140],[70,0,2,7,140]])customBox(1,...a,rockMat);
-for(const a of [[-38,-34,18,7,8],[-14,-34,10,4,16],[24,-38,22,9,8],[42,-8,8,5,22],[-38,18,20,6,9],[-7,28,24,4,8],[23,22,12,8,12],[0,-3,8,3,8],[0,10,18,2,3],[-22,-6,3,5,3],[32,42,3,8,3]])customBox(1,...a,rockMat);
-for(const x of [-52,-28,14,51]){const pillar=new R.Mesh(new R.CylinderGeometry(1.5,2,7,6),desertMat);pillar.position.set(x,3.5,(x%2)*18);pillar.castShadow=true;scene.add(pillar);customMapMeshes[1].push(pillar);customMapBoxes[1].push({x0:x-1.5,x1:x+1.5,z0:(x%2)*18-1.5,z1:(x%2)*18+1.5,top:7,cx:x,cz:(x%2)*18,r:2})}
-// ZONE INDUSTRIELLE : grande cour avec hangars, passerelles basses et rangées de conteneurs.
-customFloor(2,244,indFloorMat);
-for(const a of [[0,-120,244,9,2],[0,120,244,9,2],[-120,0,2,9,244],[120,0,2,9,244]])customBox(2,...a,indWallMat);
-for(let row=0;row<4;row++)for(let col=0;col<5;col++){const x=-78+col*38,z=-70+row*43;if(Math.abs(x)<20&&Math.abs(z)<20)continue;customBox(2,x,z,12+(col%2)*5,4+(row%2)*2,5,col%2?indAccentMat:indWallMat)}
-for(const a of [[-38,0,22,5,12],[38,0,22,5,12],[0,-38,12,3,24],[0,38,12,3,24],[-82,80,30,7,12],[82,-80,30,7,12],[0,0,10,2,10]])customBox(2,...a,indWallMat);
-for(let i=0;i<8;i++){const x=-98+i*28;customBox(2,x,0,1,8,1,indAccentMat,false)}
-// Entrepôts réalistes aux bords : façades segmentées avec portes et espaces de passage.
-for(const [x,z,w,d] of [[-88,-91,42,18],[78,-91,48,18],[-88,91,42,18],[78,91,48,18]]){
-  customBox(2,x-w/2+1,z,w,9,1.4,indWallMat);customBox(2,x+w/2-1,z,w,9,1.4,indWallMat);
-  customBox(2,x,z-d/2,w,9,1.4,indWallMat);customBox(2,x,z+d/2,w,9,1.4,indWallMat);
-  customBox(2,x,z, w-3,.45,d-3,indDarkMat,false);
-  // Poutres et toit métallique au-dessus des hangars.
-  customBox(2,x,z, w, .7,d,indDarkMat,false).position.y=9.2;
-  for(const dx of [-w*.38,-w*.15,w*.15,w*.38])customBox(2,x+dx,z, .45,8.8,.55,indAccentMat,false);
-}
-// Marquages au sol : voies de circulation et zones de sécurité jaune/noir.
-for(const z of [-48,48]){
-  customBox(2,0,z,205,.035,.22,indYellowMat,false);
-  for(let x=-96;x<100;x+=12)customBox(2,x,z+2,5,.04,.18,indYellowMat,false);
-}
-for(const [x,z] of [[-100,-22],[100,22],[-48,82],[48,-82]]){
-  customBox(2,x,z,12,.05,1.2,indYellowMat,false);
-  for(let k=0;k<5;k++)customBox(2,x-5+k*2.5,z,1.1,.06,1.6,indDarkMat,false);
-}
-// Tuyauterie, poutres, palettes, bobines de câble et fûts industriels.
-const indPipeGeo=new R.CylinderGeometry(.28,.28,18,10),indPipe2Geo=new R.CylinderGeometry(.18,.18,12,8);
-for(const [x,z,rot] of [[-54,-48,0],[54,-48,0],[-54,48,0],[54,48,0]]){
-  const pipe=new R.Mesh(indPipeGeo,indRustMat);pipe.rotation.z=Math.PI/2;pipe.position.set(x,6,z);pipe.visible=false;pipe.castShadow=true;scene.add(pipe);customMapMeshes[2].push(pipe);
-  for(const dx of [-7,0,7])customBox(2,x+dx,z,.45,7,.45,indDarkMat,false);
-  const lower=new R.Mesh(indPipe2Geo,indWallMat);lower.rotation.z=Math.PI/2;lower.position.set(x,4.7,z+1.1);lower.visible=false;lower.castShadow=true;scene.add(lower);customMapMeshes[2].push(lower);
-}
-for(const [x,z] of [[-98,-58],[-90,-54],[-82,-58],[88,56],[96,60],[104,56],[-10,-88],[8,86]]){
-  const barrel=new R.Mesh(new R.CylinderGeometry(.65,.7,1.5,12),indRustMat);barrel.position.set(x,.75,z);barrel.castShadow=true;barrel.visible=false;scene.add(barrel);customMapMeshes[2].push(barrel);customMapBoxes[2].push({x0:x-.7,x1:x+.7,z0:z-.7,z1:z+.7,top:1.5,cx:x,cz:z,r:.8});
-  const rim=new R.Mesh(new R.TorusGeometry(.62,.055,6,12),indDarkMat);rim.rotation.x=Math.PI/2;rim.position.set(x,1.3,z);rim.visible=false;scene.add(rim);customMapMeshes[2].push(rim);
-}
-for(const [x,z] of [[-70,-22],[-18,22],[34,-22],[82,22],[-70,62],[70,-62]]){
-  // Piles de palettes en bois avec collision de couverture.
-  for(let row=0;row<3;row++)customBox(2,x,z+row*.42,2.8,.32,1.8,indRustMat);
-  customBox(2,x,z,3.2,1.5,2.1,indDarkMat,false);
-}
-// Barrières de chantier rayées et postes de travail.
-for(const [x,z] of [[-38,-62],[38,62],[-12,70],[12,-70]]){
-  customBox(2,x,z,7,1.15,.35,indYellowMat);
-  for(let k=-2;k<=2;k++)customBox(2,x+k*1.35,z-.02,.38,1.18,.4,indDarkMat,false);
-  customBox(2,x,z,7,.18,.55,indDarkMat,false).position.y=1.12;
-}
-
-// FORÊT OUBLIÉE : clairières, troncs et blocs de pierre, terrain moyen.
-const forestFloorMat=new R.MeshStandardMaterial({color:0x30432b,roughness:1}),forestTrunkMat=new R.MeshStandardMaterial({color:0x49382a,roughness:1}),forestRockMat=new R.MeshStandardMaterial({color:0x58604e,roughness:1}),forestLeafMat=new R.MeshStandardMaterial({color:0x254d2d,roughness:1});
-customFloor(4,100,forestFloorMat);
-for(const a of [[0,-50,100,6,2],[0,50,100,6,2],[-50,0,2,6,100],[50,0,2,6,100]])customBox(4,...a,forestTrunkMat);
-for(const [x,z,r,h] of [[-32,-28,2,8],[-20,20,2.4,10],[27,-30,2,9],[34,18,2.2,11],[-4,-35,1.8,7],[9,30,2,8],[-36,4,2.2,9],[20,2,1.8,7]]){customBox(4,x,z,r*2,h,r*2,forestTrunkMat);customBox(4,x,z,r*4,1.4,r*4,forestLeafMat,false)}
-for(const a of [[-28,-8,9,2,5],[26,-8,7,3,8],[-8,14,6,2,9],[5,-20,10,2,4],[32,34,8,2,5]])customBox(4,...a,forestRockMat);
-// CENTRE-VILLE : rues larges, immeubles et ruelles de combat.
-const cityFloorMat=new R.MeshStandardMaterial({color:0x45464a,roughness:.95}),cityWallMat=new R.MeshStandardMaterial({color:0x555b65,roughness:.85}),cityBrickMat=new R.MeshStandardMaterial({color:0x805b50,roughness:.9}),cityGlassMat=new R.MeshStandardMaterial({color:0x253f50,roughness:.35,metalness:.5});
-customFloor(5,180,cityFloorMat);
-for(const a of [[0,-90,180,9,2],[0,90,180,9,2],[-90,0,2,9,180],[90,0,2,9,180]])customBox(5,...a,cityWallMat);
-for(const [x,z,w,d,h] of [[-65,-58,22,18,16],[-25,-62,18,22,22],[42,-62,24,18,18],[68,-30,15,22,13],[-67,8,20,18,20],[-30,48,24,18,15],[20,52,18,24,22],[62,58,22,16,17],[-62,62,14,15,12],[52,8,18,20,24]]){customBox(5,x,z,w,h,d,cityBrickMat);customBox(5,x,z,w+.2,Math.max(1,h*.48),d+.25,cityGlassMat,false).position.y=h*.72}
-for(const a of [[0,-30,4,1.5,42],[0,30,4,1.5,42],[-12,0,30,1.5,3],[14,0,28,1.5,3]])customBox(5,...a,cityWallMat);
-// BASE ARCTIQUE : petite base enneigée, modules et barrières glacées.
-const iceFloorMat=new R.MeshStandardMaterial({color:0xb5c9d4,roughness:.9}),iceWallMat=new R.MeshStandardMaterial({color:0x617e91,roughness:.7,metalness:.25}),iceGlowMat=new R.MeshStandardMaterial({color:0x43cbe0,emissive:0x126b83,emissiveIntensity:1.3,roughness:.3});
-customFloor(6,72,iceFloorMat);
-for(const a of [[0,-36,72,5,2],[0,36,72,5,2],[-36,0,2,5,72],[36,0,2,5,72]])customBox(6,...a,iceWallMat);
-for(const a of [[-22,-20,12,5,8],[20,-21,10,4,12],[-22,18,9,6,10],[22,18,12,4,8],[0,-24,12,2,3],[0,24,12,2,3],[-13,0,3,2,16],[13,0,3,2,16],[0,0,8,3,8]])customBox(6,...a,iceWallMat);
-for(const [x,z] of [[-28,-28],[28,-28],[-28,28],[28,28]])customBox(6,x,z,1,4,1,iceGlowMat,false);
-// TEMPLE ANCIEN : grande arène de ruines, colonnes et cours intérieures.
-const templeFloorMat=new R.MeshStandardMaterial({color:0x817052,roughness:1}),templeStoneMat=new R.MeshStandardMaterial({color:0x62533a,roughness:.95}),templeGoldMat=new R.MeshStandardMaterial({color:0xa88a4f,roughness:.7,metalness:.2});
-customFloor(7,220,templeFloorMat);
-for(const a of [[0,-110,220,10,3],[0,110,220,10,3],[-110,0,3,10,220],[110,0,3,10,220]])customBox(7,...a,templeStoneMat);
-for(const [x,z] of [[-75,-72],[-38,-72],[38,-72],[75,-72],[-75,72],[-38,72],[38,72],[75,72],[-72,-30],[-72,30],[72,-30],[72,30]]){customBox(7,x,z,4,12,4,templeGoldMat);customBox(7,x,z,6,1,6,templeStoneMat,false).position.y=11.5}
-for(const a of [[-48,-40,26,6,8],[48,-40,26,6,8],[-48,40,26,6,8],[48,40,26,6,8],[0,-58,30,4,5],[0,58,30,4,5],[-58,0,5,3,30],[58,0,5,3,30],[-25,0,5,5,20],[25,0,5,5,20],[0,-20,20,4,5],[0,20,20,4,5]])customBox(7,...a,templeStoneMat);
-for(const [x,z] of [[-10,-10],[10,-10],[-10,10],[10,10]])customBox(7,x,z,2,3,2,templeGoldMat,false);
-
-/* ---- couvertures supplémentaires : cachettes et petits abris sur chaque map ---- */
-// DÉSERT : rochers bas et morceaux de murs pour casser les lignes de tir.
-for(const a of [[-50,-12,9,2.2,4],[-31,6,7,2.6,3],[18,-12,8,2.4,4],[48,22,7,2.2,4],[-8,43,10,2.5,3],[6,-48,8,2.3,4],[34,4,5,2,6],[-48,38,6,2.2,5]])customBox(1,...a,rockMat);
-// ZONE INDUSTRIELLE : palettes, caisses et barrières de chantier, avec des passages entre elles.
-for(const a of [[-94,-42,8,2.1,3],[-56,-18,7,2.4,4],[-18,-72,9,2.2,3],[22,-18,8,2.5,3],[58,-52,7,2.2,4],[92,42,8,2.4,3],[-74,48,9,2.3,3],[-30,74,7,2.2,4],[48,68,10,2.3,3],[82,-8,6,2.5,5],[0,56,7,2.2,3]])customBox(2,...a,indAccentMat);
-// FORÊT : rochers, troncs tombés et buissons solides pour créer de vrais couverts.
-for(const a of [[-38,-16,10,1.8,3],[-24,0,8,2,3],[2,-28,11,1.7,3],[17,18,9,2,3],[38,-2,8,1.8,4],[-8,38,10,2,3],[-40,32,7,2,3],[30,38,9,1.8,3]])customBox(4,...a,forestRockMat);
-for(const [x,z] of [[-40,-38],[-12,-8],[12,-40],[40,12],[-30,40],[8,6],[34,32]]){const bush=new R.Mesh(new R.DodecahedronGeometry(2.1,1),forestLeafMat);bush.position.set(x,1.15,z);bush.scale.set(1.35,.8,1.1);bush.castShadow=true;bush.visible=false;scene.add(bush);customMapMeshes[4].push(bush);customMapBoxes[4].push({x0:x-2.2,x1:x+2.2,z0:z-2,z1:z+2,top:2.3,cx:x,cz:z,r:2.5})}
-// CENTRE-VILLE : carcasses basses, murets et abris dans les rues.
-for(const a of [[-48,-30,8,1.7,3],[-6,-58,9,1.8,3],[38,-30,8,1.6,3],[72,4,7,1.8,3],[-48,32,9,1.7,3],[0,62,8,1.8,3],[42,32,8,1.6,3],[-78,-24,6,1.8,4],[78,38,6,1.8,4]])customBox(5,...a,cityWallMat);
-// BASE ARCTIQUE : caisses de ravitaillement et murets de neige.
-for(const a of [[-25,-7,6,2,3],[24,5,6,2,3],[-7,27,7,1.8,3],[7,-27,7,1.8,3],[-27,8,4,2.2,5],[27,-8,4,2.2,5],[0,15,5,1.8,3]])customBox(6,...a,iceWallMat);
-// TEMPLE : fragments de murs et blocs de pierre pour multiplier les angles de couverture.
-for(const a of [[-82,0,10,2.5,5],[82,0,10,2.5,5],[-38,-20,9,2.2,4],[38,20,9,2.2,4],[-18,48,8,2.3,4],[18,-48,8,2.3,4],[-78,48,8,2.2,4],[78,-48,8,2.2,4],[0,-82,10,2.4,4],[0,82,10,2.4,4]])customBox(7,...a,templeStoneMat);
-
-/* ---- LABO NÉON agrandi : 72 x 72, avec couloirs et salles latérales ---- */
+ /* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
  const smallWallMat=new R.MeshStandardMaterial({color:0x26313b,roughness:.62,metalness:.72,envMapIntensity:.8});
  const smallFloorMat=new R.MeshStandardMaterial({color:0x171b21,roughness:.82,metalness:.28,envMapIntensity:.45});
  const smallGlowMat=new R.MeshStandardMaterial({color:0x19a8a8,emissive:0x087777,emissiveIntensity:2.2,roughness:.35,metalness:.45});
  function addSmallBox(x,z,w,h,d,m=smallWallMat){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);smallMapMeshes.push(me);smallMapBoxes.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
- const smallFloor=new R.Mesh(new R.PlaneGeometry(72,72),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
- addSmallBox(0,-36,72,5,1);addSmallBox(0,36,72,5,1);addSmallBox(-36,0,1,5,72);addSmallBox(36,0,1,5,72);
- // Modules de laboratoire : salles latérales, cloisons et passages ouverts.
- [[-16,-18,5,4,12],[16,18,5,4,12],[-16,18,12,2.5,4],[16,-18,12,2.5,4],[-13,0,3,3,9],[13,0,3,3,9],[0,-16,8,2.5,4],[0,16,8,2.5,4],[-26,-10,8,3,3],[26,10,8,3,3],[-26,12,3,3,10],[26,-12,3,3,10],[-7,-27,12,3,3],[7,27,12,3,3],[0,0,4,2,4]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
- // Couvertures basses et consoles pour multiplier les itinéraires sans bloquer les passages.
- [[-25,-25,5,1.8,3],[25,25,5,1.8,3],[-25,25,5,1.8,3],[25,-25,5,1.8,3],[-5,-28,7,1.7,2],[5,28,7,1.7,2],[-29,0,2,1.8,7],[29,0,2,1.8,7],[-8,8,5,1.8,2],[8,-8,5,1.8,2],[0,-7,2,1.8,5],[0,7,2,1.8,5]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
- for(const z of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(62,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
- for(const x of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,62),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
-/* ---- murs et blocs améliorés : panneaux, bordures, renforts et boulons ---- */
-const wallDetailMats=[
- new R.MeshStandardMaterial({color:0x566166,roughness:.72,metalness:.48}),
- new R.MeshStandardMaterial({color:0xb58a54,roughness:.92,metalness:.05}),
- new R.MeshStandardMaterial({color:0x252a2d,roughness:.65,metalness:.62}),
- new R.MeshStandardMaterial({color:0x3d5967,roughness:.42,metalness:.78}),
- new R.MeshStandardMaterial({color:0x594c3b,roughness:.96,metalness:.02}),
- new R.MeshStandardMaterial({color:0x6c737c,roughness:.72,metalness:.35}),
- new R.MeshStandardMaterial({color:0x829aa6,roughness:.65,metalness:.25}),
- new R.MeshStandardMaterial({color:0x9b8764,roughness:.96,metalness:.02})
-];
-const wallTrimMats=[
- new R.MeshStandardMaterial({color:0xc2a45d,roughness:.65,metalness:.42}),
- new R.MeshStandardMaterial({color:0x4e3d2a,roughness:.9}),
- indAccentMat,smallGlowMat,forestLeafMat,cityGlassMat,iceGlowMat,templeGoldMat
-];
-function visualBox(mi,x,y,z,w,h,d,material){
- const mesh=new R.Mesh(new R.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.visible=false;scene.add(mesh);customMapMeshes[mi].push(mesh);return mesh;
-}
-function decoratePerimeter(mi,half,height,wallMat,trimMat,segment=10){
- // Plaques segmentées posées sur la face intérieure des murs, sans modifier les collisions.
- for(let t=-half+segment/2;t<half;t+=segment){
-  for(const sign of [-1,1]){
-   visualBox(mi,t,height*.58,sign*(half-.95),segment-.45,height*.62,.10,wallMat);
-   visualBox(mi,t,height*.24,sign*(half-1.02),segment-.5,.12,.16,trimMat);
-   visualBox(mi,t,height*.9,sign*(half-.98),segment-.45,.16,.14,trimMat);
-   visualBox(mi,sign*(half-.95),height*.58,t,.10,height*.62,segment-.45,wallMat);
-   visualBox(mi,sign*(half-1.02),height*.24,t,.16,.12,segment-.5,trimMat);
-   visualBox(mi,sign*(half-.98),height*.9,t,.14,.16,segment-.45,trimMat);
-   // petits boulons visuels sur chaque panneau
-   for(const off of [-segment*.32,segment*.32]){
-    visualBox(mi,t+off,height*.34,sign*(half-1.12),.12,.12,.035,trimMat);
-    visualBox(mi,sign*(half-1.12),height*.34,t+off,.035,.12,.12,trimMat);
-   }
-  }
- }
-}
-function detailBlock(mi,x,z,w,h,d,faceMat,trimMat){
- // Plaque frontale, bande de renfort, cornières et rebord supérieur décoratifs.
- const faceZ=z+d/2+.035;
- visualBox(mi,x,h*.57,faceZ,w*.72,h*.48,.07,faceMat);
- visualBox(mi,x,h*.31,faceZ+.045,w*.76,.13,.09,trimMat);
- visualBox(mi,x-w*.39,h*.52,faceZ+.05,.12,h*.82,.10,trimMat);
- visualBox(mi,x+w*.39,h*.52,faceZ+.05,.12,h*.82,.10,trimMat);
- visualBox(mi,x,h+.045,z,w+.12,.09,d+.12,trimMat);
- for(const sx of [-1,1])for(const sy of [.34,.72])visualBox(mi,x+sx*w*.31,h*sy,faceZ+.105,.10,.10,.035,trimMat);
-}
-// Chaque enceinte reçoit des murs segmentés et des arêtes plus lisibles.
-[[0,100,6],[1,70,7],[2,120,9],[3,36,5],[4,50,6],[5,90,9],[6,36,5],[7,110,10]].forEach(([mi,half,h])=>decoratePerimeter(mi,half,h,wallDetailMats[mi],wallTrimMats[mi],mi===3||mi===6?6:10));
-// Habillage des blocs emblématiques : les pièces décoratives restent sans collision.
-[
- [0,[-28,-28,16,9,14],[28,-26,14,7,16],[-26,26,12,6,18],[30,30,16,10,12]],
- [1,[-38,-34,18,7,8],[24,-38,22,9,8],[-38,18,20,6,9],[23,22,12,8,12]],
- [2,[-78,-70,17,4,5],[-2,-70,17,4,5],[74,-70,17,4,5],[-78,59,17,6,5],[74,59,17,6,5]],
- [3,[-16,-18,5,4,12],[16,18,5,4,12],[-26,-10,8,3,3],[26,10,8,3,3],[0,0,4,2,4]],
- [4,[-28,-8,9,2,5],[26,-8,7,3,8],[-8,14,6,2,9],[5,-20,10,2,4]],
- [5,[-65,-58,22,16,18],[-25,-62,18,22,22],[42,-62,24,18,18],[20,52,18,22,24]],
- [6,[-22,-20,12,5,8],[20,-21,10,4,12],[-22,18,9,6,10],[22,18,12,4,8]],
- [7,[-48,-40,26,6,8],[48,-40,26,6,8],[-48,40,26,6,8],[48,40,26,6,8]]
-].forEach(([mi,...blocks])=>blocks.forEach(([x,z,w,h,d])=>detailBlock(mi,x,z,w,h,d,wallDetailMats[mi],wallTrimMats[mi])));
-// Renforts verticaux sur les murs industriels, panneaux de béton en ville et joints de pierre au temple.
-for(let x=-108;x<=108;x+=18){visualBox(2,x,4.5,-119, .28,8.5,.18,indAccentMat);visualBox(2,x,4.5,119,.28,8.5,.18,indAccentMat)}
-for(let x=-80;x<=80;x+=20){visualBox(5,x,4.5,-89,.18,8.2,.16,cityGlassMat);visualBox(5,x,4.5,89,.18,8.2,.16,cityGlassMat)}
-for(let x=-100;x<=100;x+=20){visualBox(7,x,5.1,-108,.35,9.4,.20,templeGoldMat);visualBox(7,x,5.1,108,.35,9.4,.20,templeGoldMat)}
-
-/* ---- amélioration graphique des huit maps : textures, reliefs et détails ---- */
-function floorTexture(draw,repeat){const tex=ctex((g)=>{g.fillStyle='#555';g.fillRect(0,0,256,256);draw(g)},repeat);tex.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());return tex}
-function dressFloor(material,draw,repeat,normalStrength=1.15){const tex=floorTexture(draw,repeat);material.map=tex;material.normalMap=normalTex(tex,normalStrength);material.normalScale.set(.42,.42);material.needsUpdate=true}
-// DOCKS : béton de quai usé, joints et traces de manutention.
-dressFloor(mGround,g=>{g.fillStyle='#41443f';g.fillRect(0,0,256,256);g.strokeStyle='rgba(17,22,22,.55)';g.lineWidth=2;for(let v=0;v<=256;v+=64){g.beginPath();g.moveTo(v,0);g.lineTo(v,256);g.moveTo(0,v);g.lineTo(256,v);g.stroke()}g.strokeStyle='rgba(190,158,74,.48)';g.lineWidth=5;g.setLineDash([20,12]);g.beginPath();g.moveTo(22,0);g.lineTo(22,256);g.stroke();g.setLineDash([]);for(let i=0;i<90;i++){g.fillStyle=`rgba(8,12,12,${.04+Math.random()*.1})`;g.fillRect(Math.random()*256,Math.random()*256,2+Math.random()*18,1+Math.random()*5)}},18,1.35);
-// DÉSERT : grains de sable, rides du vent et petites zones de roche.
-dressFloor(desertMat,g=>{g.fillStyle='#a98550';g.fillRect(0,0,256,256);for(let i=0;i<900;i++){const x=Math.random()*256,y=Math.random()*256;g.strokeStyle=`rgba(${Math.random()<.5?'235,202,133':'91,62,34'},${.08+Math.random()*.18})`;g.lineWidth=.5+Math.random()*1.4;g.beginPath();g.arc(x,y,2+Math.random()*12,Math.PI*(.1+Math.random()*.2),Math.PI*(.7+Math.random()*.4));g.stroke()}for(let i=0;i<16;i++){g.fillStyle='rgba(76,55,35,.09)';g.beginPath();g.ellipse(Math.random()*256,Math.random()*256,8+Math.random()*24,3+Math.random()*10,Math.random()*3,0,Math.PI*2);g.fill()}},12,1.0);
-// ZONE INDUSTRIELLE : béton fissuré et marqué par les roues, avec un relief discret.
-indFloorMat.normalMap=normalTex(indConcreteTex,1.25);indFloorMat.normalScale.set(.55,.55);indFloorMat.needsUpdate=true;
-// LABO NÉON : panneaux métalliques, rivets et trames techniques.
-dressFloor(smallFloorMat,g=>{g.fillStyle='#171e25';g.fillRect(0,0,256,256);for(let y=0;y<256;y+=32)for(let x=0;x<256;x+=32){g.fillStyle=((x+y)/32)%2?'#202b34':'#1b252e';g.fillRect(x+1,y+1,30,30);g.strokeStyle='rgba(99,145,157,.24)';g.strokeRect(x+2,y+2,28,28);g.fillStyle='rgba(120,221,231,.5)';g.fillRect(x+4,y+4,2,2);g.fillRect(x+26,y+26,2,2)}g.strokeStyle='rgba(28,210,214,.3)';g.lineWidth=2;for(let k=16;k<256;k+=64){g.beginPath();g.moveTo(k,0);g.lineTo(k,256);g.stroke()}},10,1.25);
-// FORÊT : sol sombre couvert de mousse, feuilles et brindilles.
-dressFloor(forestFloorMat,g=>{g.fillStyle='#263b27';g.fillRect(0,0,256,256);for(let i=0;i<1400;i++){const x=Math.random()*256,y=Math.random()*256;g.fillStyle=Math.random()<.55?'rgba(91,112,54,.22)':'rgba(15,28,17,.3)';g.beginPath();g.ellipse(x,y,1+Math.random()*4,.5+Math.random()*2,Math.random()*3,0,Math.PI*2);g.fill()}for(let i=0;i<60;i++){g.strokeStyle='rgba(112,88,56,.32)';g.lineWidth=1;g.beginPath();g.moveTo(Math.random()*256,Math.random()*256);g.lineTo(Math.random()*256,Math.random()*256);g.stroke()}},9,1.3);
-// CENTRE-VILLE : asphalte, réparations et marquages effacés.
-dressFloor(cityFloorMat,g=>{g.fillStyle='#414247';g.fillRect(0,0,256,256);for(let i=0;i<1000;i++){const v=35+Math.random()*45;g.fillStyle=`rgba(${v},${v},${v+3},${.08+Math.random()*.12})`;g.fillRect(Math.random()*256,Math.random()*256,1+Math.random()*4,1+Math.random()*3)}g.strokeStyle='rgba(215,190,124,.38)';g.lineWidth=3;g.setLineDash([22,18]);g.beginPath();g.moveTo(128,0);g.lineTo(128,256);g.stroke();g.setLineDash([]);g.strokeStyle='rgba(20,20,20,.45)';g.lineWidth=1;for(let i=0;i<12;i++){const x=Math.random()*256,y=Math.random()*256;g.beginPath();g.moveTo(x,y);g.lineTo(x+5+Math.random()*16,y+2+Math.random()*12);g.stroke()}},16,1.1);
-// BASE ARCTIQUE : glace striée, fissures et couches de neige compacte.
-dressFloor(iceFloorMat,g=>{g.fillStyle='#a9c2ce';g.fillRect(0,0,256,256);for(let i=0;i<110;i++){g.strokeStyle=`rgba(${Math.random()<.5?'235,250,255':'58,119,145'},${.08+Math.random()*.2})`;g.lineWidth=.5+Math.random()*2;let x=Math.random()*256,y=Math.random()*256;g.beginPath();g.moveTo(x,y);for(let j=0;j<3;j++){x+=(Math.random()-.5)*28;y+=(Math.random()-.5)*24;g.lineTo(x,y)}g.stroke()}for(let i=0;i<80;i++){g.fillStyle='rgba(255,255,255,.12)';g.beginPath();g.ellipse(Math.random()*256,Math.random()*256,4+Math.random()*18,2+Math.random()*8,Math.random()*3,0,Math.PI*2);g.fill()}},9,1.0);
-// TEMPLE ANCIEN : dalles de grès, joints irréguliers et usure des passages.
-dressFloor(templeFloorMat,g=>{g.fillStyle='#796747';g.fillRect(0,0,256,256);g.lineWidth=2;for(let y=0;y<256;y+=32){const off=(y/32%2)*16;for(let x=-32+off;x<256;x+=64){g.fillStyle=`rgba(${Math.random()<.5?'191,159,104':'48,39,25'},${.06+Math.random()*.13})`;g.fillRect(x+2,y+2,60,28);g.strokeStyle='rgba(45,37,26,.5)';g.strokeRect(x,y,64,32)}}for(let i=0;i<90;i++){g.strokeStyle='rgba(44,35,23,.25)';g.beginPath();const x=Math.random()*256,y=Math.random()*256;g.moveTo(x,y);g.lineTo(x+Math.random()*12,y+Math.random()*10);g.stroke()}},20,1.25);
-// Détails visuels non bloquants : balises, éclairages, débris et éléments de silhouette.
-function mapDetail(mi,mesh){mesh.castShadow=true;mesh.receiveShadow=true;mesh.visible=false;scene.add(mesh);customMapMeshes[mi].push(mesh);return mesh}
-const dockLampMat=new R.MeshStandardMaterial({color:0x30383b,metalness:.75,roughness:.4}),dockLampGlow=new R.MeshBasicMaterial({color:0xffd58a});
-for(const [x,z] of [[-88,-82],[88,-82],[-88,82],[88,82],[-48,0],[48,0]]){const pole=mapDetail(0,new R.Mesh(new R.CylinderGeometry(.16,.22,7,8),dockLampMat));pole.position.set(x,3.5,z);const bulb=mapDetail(0,new R.Mesh(new R.SphereGeometry(.38,10,8),dockLampGlow));bulb.position.set(x,7.1,z)}
-const desertTuft=new R.MeshStandardMaterial({color:0x6f7138,roughness:1});for(const [x,z] of [[-56,34],[42,-52],[54,40],[-42,-48],[4,54],[58,4],[-60,-4]]){for(let k=0;k<3;k++){const blade=mapDetail(1,new R.Mesh(new R.ConeGeometry(.16,1.1,4),desertTuft));blade.position.set(x+(k-1)*.18,.48,z+(k%2)*.12);blade.rotation.z=(k-1)*.25}}
-// Éclairage local doux pour souligner les zones industrielles et les néons sans modifier le gameplay.
-for(const [x,z,col,intensity,dist] of [[-88,-90,0xffb66b,1.5,28],[78,-90,0xffb66b,1.5,28],[-88,90,0xffb66b,1.5,28],[78,90,0xffb66b,1.5,28]]){const lamp=mapDetail(2,new R.PointLight(col,intensity,dist,2));lamp.position.set(x,7,z)}
-for(const [x,z,col] of [[-30,-30,0x17dfff],[30,-30,0xff35d2],[-30,30,0xff35d2],[30,30,0x17dfff]]){const lamp=mapDetail(3,new R.PointLight(col,1.4,20,2));lamp.position.set(x,3,z)}
-// Sous-bois : fougères stylisées et troncs couchés pour casser les silhouettes trop géométriques.
-const fernMat=new R.MeshStandardMaterial({color:0x3d7139,roughness:1});for(const [x,z] of [[-42,-28],[-34,20],[38,-36],[42,26],[-8,42],[15,-43]]){for(let k=0;k<5;k++){const leaf=mapDetail(4,new R.Mesh(new R.ConeGeometry(.22,1.35,5),fernMat));leaf.position.set(x+(Math.random()-.5)*.8,.65,z+(Math.random()-.5)*.8);leaf.rotation.z=(Math.random()-.5)*.9}}
-// Ville : lampadaires, petits panneaux et reflets de vitrine.
-const cityPoleMat=new R.MeshStandardMaterial({color:0x282d32,metalness:.65,roughness:.45}),cityLampMat=new R.MeshBasicMaterial({color:0xffd9a0});for(const [x,z] of [[-8,-72],[8,-72],[-8,72],[8,72],[-78,0],[78,0]]){const pole=mapDetail(5,new R.Mesh(new R.CylinderGeometry(.12,.16,5.5,8),cityPoleMat));pole.position.set(x,2.75,z);const bulb=mapDetail(5,new R.Mesh(new R.BoxGeometry(1.2,.16,.4),cityLampMat));bulb.position.set(x,5.5,z)}
-// Base arctique : balises cyan et petites plaques de glace translucides.
-for(const [x,z] of [[-30,-30],[30,-30],[-30,30],[30,30]]){const beacon=mapDetail(6,new R.Mesh(new R.CylinderGeometry(.12,.2,3.5,8),iceGlowMat));beacon.position.set(x,1.75,z);const lamp=mapDetail(6,new R.PointLight(0x42d9ff,.85,13,2));lamp.position.set(x,3.5,z)}
-// Temple : dalles décoratives et braseros dorés.
-const templeInlay=new R.MeshStandardMaterial({color:0xb18d4e,metalness:.3,roughness:.7}),torchMat=new R.MeshBasicMaterial({color:0xffb64c});for(const [x,z] of [[-18,-18],[18,-18],[-18,18],[18,18]]){const inlay=mapDetail(7,new R.Mesh(new R.BoxGeometry(5,.035,.18),templeInlay));inlay.position.set(x,.045,z);const flame=mapDetail(7,new R.Mesh(new R.SphereGeometry(.22,8,6),torchMat));flame.position.set(x,2.2,z);const glow=mapDetail(7,new R.PointLight(0xffa94d,.7,10,2));glow.position.set(x,2.4,z)}
+ const smallFloor=new R.Mesh(new R.PlaneGeometry(44,44),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
+ addSmallBox(0,-22,44,5,1);addSmallBox(0,22,44,5,1);addSmallBox(-22,0,1,5,44);addSmallBox(22,0,1,5,44);
+ [[-10,-9,3,4,10],[10,9,3,4,10],[-10,9,8,2,3],[10,-9,8,2,3],[-8,0,3,2,5],[8,0,3,2,5],[0,-10,5,2,3],[0,10,5,2,3]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
+ for(const z of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(38,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
+ for(const x of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,38),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
  /* poussières flottantes */
  const dust=(()=>{const n=900,pa=new Float32Array(n*3);for(let i=0;i<n;i++){pa[i*3]=(rnd()-.5)*110*K;pa[i*3+1]=rnd()*14;pa[i*3+2]=(rnd()-.5)*110*K}
   const g=new R.BufferGeometry();g.setAttribute('position',new R.BufferAttribute(pa,3));
@@ -602,7 +399,7 @@ const templeInlay=new R.MeshStandardMaterial({color:0xb18d4e,metalness:.3,roughn
   const p=new R.Points(g,m);scene.add(p);return p})();
 
 /* collisions cercle/AABB, retourne la hauteur du sol sous le point */
-function activeBoxes(){return mapIndex===3?smallMapBoxes:(mapIndex===0?boxes:customMapBoxes[mapIndex])}
+function activeBoxes(){return mapIndex===3?smallMapBoxes:boxes}
 function collide(p,r){let g=0;for(const b of activeBoxes()){if(!(p.x>b.x0-r&&p.x<b.x1+r&&p.z>b.z0-r&&p.z<b.z1+r))continue;
  if(p.y>=b.top-.35){g=Math.max(g,b.top);continue}
  const dx=Math.min(p.x-(b.x0-r),b.x1+r-p.x),dz=Math.min(p.z-(b.z0-r),b.z1+r-p.z);
@@ -1235,7 +1032,6 @@ function changeMapByTimer(){
   const next=(mapIndex+1)%MAPS.length;
   enemies.forEach(e=>scene.remove(e.g)); enemies.length=0; toSpawn=0; spT=0; wt=mp?1e9:2;
   applyMap(next,true);
-  respawnPos();
   P.score=0; P.streak=0; P.points=0;
   wave=0;
   resetMapTimer();
@@ -1263,7 +1059,7 @@ function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blad
   add(eg.c,em.s,0,1.5,0,1);add(eg.h,em.s,0,1.68,0,1);add(eg.helm,em.vest,0,1.8,.02);add(eg.vis,em.p,0,1.7,-.19);
   e.visor=e.parts[e.parts.length-1];e.visor.material=new R.MeshStandardMaterial({color:0x200505,emissive:boss?0xff2a12:blade?0xff9500:0xff3a1a,emissiveIntensity:boss?2.4:blade?2:1.4,roughness:.2,metalness:.6});
   if(boss){g.scale.setScalar(2.4);e.parts.forEach(p=>{if(p.material.emissive&&!p.material.emissive.getHex()){p.material.emissive.setHex(0x220505);p.material.emissiveIntensity=1}})}
-  for(let i=0;i<12;i++){const a=rnd()*6.28,r=mapIndex===3?(8+rnd()*5):([40,27,75,10,24,55,18,68][mapIndex]+rnd()*8),lim=[59,39,112,20,46,84,32,104][mapIndex]-4;g.position.set(Math.max(-lim,Math.min(lim,Math.cos(a)*r)),0,Math.max(-lim,Math.min(lim,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>(mapIndex===3?12:28))break}
+  for(let i=0;i<12;i++){const a=rnd()*6.28,r=mapIndex===3?(14+rnd()*5):(40+rnd()*15)*1.3,lim=mapIndex===3?20:B-4;g.position.set(Math.max(-lim,Math.min(lim,Math.cos(a)*r)),0,Math.max(-lim,Math.min(lim,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>(mapIndex===3?12:28))break}
   scene.add(g);enemies.push(e);if(boss)sfx.roar();else if(blade)killfeed('⚠ ASSAUT AU COUTEAU !','#ff9b2a')}
 function flashEnemy(e){if(e.fl>0)return;for(const p of e.parts)p.material.emissive.setHex(0xffffff)}
 function updEnemyFlash(e,dt){
@@ -1355,7 +1151,7 @@ function callStrike(){if((P.sh||0)>T||strikes<=0)return;strikes--;banner('FRAPPE
 function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.position,nx=p.x+u.v.x*dt,nz=p.z+u.v.z*dt;u.v.y-=20*dt;p.addScaledVector(u.v,dt);
  const g=collide(p,.15);if(Math.abs(p.x-nx)>1e-4)u.v.x*=-.5;if(Math.abs(p.z-nz)>1e-4)u.v.z*=-.5;
  if(p.y<=g+.12){p.y=g+.12;if(u.v.y<0)u.v.y*=-.4;if(Math.abs(u.v.y)<.5)u.v.y=0;u.v.x*=.85;u.v.z*=.85}
- const lim=MAP_LIMITS[mapIndex]-2;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
+ const lim=mapIndex===3?20:59;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
  if((u.f-=dt)<=0){m.visible=false;explode(p,8,160)}});
  for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200);air.splice(i,1)}}}
 /* ================= HUD ================= */
@@ -1408,7 +1204,7 @@ function update(dt){
  let dx=-Math.sin(P.yaw)*f+Math.cos(P.yaw)*s,dz=-Math.cos(P.yaw)*f-Math.sin(P.yaw)*s;const l=Math.hypot(dx,dz);if(l>0){dx/=l;dz/=l}
  const ac=Math.min(1,dt*(P.ground?10:2));P.vel.x+=(dx*spd-P.vel.x)*ac;P.vel.z+=(dz*spd-P.vel.z)*ac;
  if(k.Space&&P.ground){P.vel.y=8;P.ground=false}P.vel.y-=25*dt;
- const playLim=MAP_LIMITS[mapIndex]-2;P.pos.x=Math.max(-playLim,Math.min(playLim,P.pos.x+P.vel.x*dt));P.pos.z=Math.max(-playLim,Math.min(playLim,P.pos.z+P.vel.z*dt));P.pos.y+=P.vel.y*dt;
+ P.pos.x=Math.max(-B+.5,Math.min(B-.5,P.pos.x+P.vel.x*dt));P.pos.z=Math.max(-B+.5,Math.min(B-.5,P.pos.z+P.vel.z*dt));P.pos.y+=P.vel.y*dt;
  const g=collide(P.pos,.4);if(P.pos.y<=g){P.pos.y=g;P.vel.y=0;P.ground=true}else P.ground=false;
  P.pitch=Math.max(-1.5,Math.min(1.5,P.pitch));P.hh+=((crouch?1.1:1.7)-P.hh)*Math.min(1,dt*10);
  const hs=Math.hypot(P.vel.x,P.vel.z);if(P.ground&&hs>1){bobT+=dt*hs*1.6;const st=Math.floor(bobT/Math.PI);if(st!==lastStep){lastStep=st;sfx.step()}}
@@ -1522,32 +1318,7 @@ function mkRemote(name){const g=new R.Group(),parts=[];
  const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
-const MAP_LIMITS=[90,60,105,18,45,82,31,100];
-function spawnPointClear(x,z,lim,bs){
- if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>lim||Math.abs(z)>lim)return false;
- // Garder une marge autour du joueur et éviter toutes les collisions actives de la map.
- return bs.every(b=>!(x>b.x0-1.25&&x<b.x1+1.25&&z>b.z0-1.25&&z<b.z1+1.25));
-}
-function respawnPos(){
- const lim=Math.max(2,MAP_LIMITS[mapIndex]-3),bs=activeBoxes();let found=false;
- // Essayer d'abord plusieurs points répartis sur la map, puis parcourir une grille complète.
- for(let i=0;i<300;i++){
-  const x=(rnd()*2-1)*lim,z=(rnd()*2-1)*lim;
-  if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}
- }
- if(!found){
-  for(let radius=0;radius<=lim&&!found;radius+=2){
-   for(let x=-lim;x<=lim&&!found;x+=2)for(let z=-lim;z<=lim;z+=2){
-    if(radius>0&&Math.abs(Math.hypot(x,z)-radius)>2.2)continue;
-    if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}
-   }
-  }
- }
- // Dernier recours : point sûr trouvé en balayant toute la zone, jamais un point hors map.
- if(!found){outer:for(let x=-lim;x<=lim;x+=.5)for(let z=-lim;z<=lim;z+=.5){if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break outer}}}
- if(!found)P.pos.set(0,0,0);
- P.pos.x=Math.max(-lim,Math.min(lim,P.pos.x));P.pos.z=Math.max(-lim,Math.min(lim,P.pos.z));P.vel.set(0,0,0);
-}
+function respawnPos(){const lim=mapIndex===3?18:B-10,bs=activeBoxes();for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*2*lim,0,(rnd()-.5)*2*lim);if(bs.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
 const shEl=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 140px 40px rgba(70,170,255,.6);border:3px solid rgba(120,200,255,.5)';document.body.appendChild(d);return d})();
 function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
 function mpTick(dt){const seen=new Set(),peers=room.peers();
@@ -1567,7 +1338,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  }else if(hostPresence&&typeof hostPresence.mt==='number'&&typeof hostPresence.mi==='number'){
    mapTime=Math.max(0,Math.min(MAP_TIME,hostPresence.mt));
    mpMapEndAt=Date.now()+mapTime*1000;
-   if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);respawnPos();enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
+   if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
  }else{if(!mpMapEndAt)resetMapTimer();mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000)}
  room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
