@@ -322,7 +322,7 @@ renderer.setSize(innerWidth,innerHeight);
 const B=100,K=B/60,boxes=[],bm=[];
 let mapIndex=0;
 const smallMapMeshes=[],smallMapBoxes=[],customMapMeshes=Array.from({length:8},()=>[]),customMapBoxes=Array.from({length:8},()=>[]);
-const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8},{name:'FORÊT OUBLIÉE',ground:0x263b27,wall:0x30452d,sky:0x15251b,accent:0x587447},{name:'CENTRE-VILLE',ground:0x55545a,wall:0x36383e,sky:0x303746,accent:0xb45b39},{name:'BASE ARCTIQUE',ground:0x9aaeba,wall:0x657986,sky:0x9eb8c8,accent:0x4bd5e8},{name:'TEMPLE ANCIEN',ground:0x78664b,wall:0x544631,sky:0x554735,accent:0xc5a15b}];
+const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x45494b,wall:0x3a3f42,sky:0x414b52,accent:0xb94e1b},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8},{name:'FORÊT OUBLIÉE',ground:0x263b27,wall:0x30452d,sky:0x15251b,accent:0x587447},{name:'CENTRE-VILLE',ground:0x55545a,wall:0x36383e,sky:0x303746,accent:0xb45b39},{name:'BASE ARCTIQUE',ground:0x9aaeba,wall:0x657986,sky:0x9eb8c8,accent:0x4bd5e8},{name:'TEMPLE ANCIEN',ground:0x78664b,wall:0x544631,sky:0x554735,accent:0xc5a15b}];
 function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;const scales=[1,.7,1.22,.22,.5,.9,.36,1.1],fogNear=[30,22,38,12,18,28,16,34],fogFar=[210,125,270,52,145,210,105,245];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true;const sc=scales[mapIndex]||1;ground.scale.set(sc,1,sc)}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=fogNear[mapIndex]||25;scene.fog.far=fogFar[mapIndex]||180}for(const q of bm){if(q){q.visible=mapIndex===0;if(q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}}if(typeof decor!=='undefined')decor.visible=mapIndex===0;for(let i=0;i<customMapMeshes.length;i++)for(const q of customMapMeshes[i])q.visible=i===mapIndex;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+' · '+(['GRANDE','MOYENNE','GRANDE','PETITE','MOYENNE','GRANDE','PETITE','TRÈS GRANDE'][mapIndex]),2.2,30)}
 
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
@@ -383,7 +383,10 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   for(let k=0;k<5;k++){const w=new R.Mesh(new R.BoxGeometry(2.6,.05,.05),mMetal);w.position.set(0,.2+k*.3,0);p.add(w)}
   contact(x,z,3,3)}
  /* ---- deux layouts supplémentaires réellement différents ---- */
-const desertMat=new R.MeshStandardMaterial({color:0x9b7546,roughness:1}),rockMat=new R.MeshStandardMaterial({color:0x6b5237,roughness:1}),indFloorMat=new R.MeshStandardMaterial({color:0x343b42,roughness:.9}),indWallMat=new R.MeshStandardMaterial({color:0x505b63,roughness:.7,metalness:.35}),indAccentMat=new R.MeshStandardMaterial({color:0xc45b24,roughness:.8});
+const desertMat=new R.MeshStandardMaterial({color:0x9b7546,roughness:1}),rockMat=new R.MeshStandardMaterial({color:0x6b5237,roughness:1});
+// Sol industriel : béton sombre texturé, traces de pneus, joints et taches d'huile (pas de neige).
+const indConcreteTex=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d');g.fillStyle='#45494b';g.fillRect(0,0,512,512);let seed=9182;const rand=()=>((seed=(seed*16807)%2147483647)-1)/2147483646;for(let i=0;i<4200;i++){const v=45+Math.floor(rand()*38);g.fillStyle=`rgba(${v},${v+2},${v+3},${.08+rand()*.22})`;g.fillRect(rand()*512,rand()*512,1+rand()*8,1+rand()*5)}for(let i=0;i<38;i++){const x=rand()*512,y=rand()*512,r=5+rand()*35,gr=g.createRadialGradient(x,y,1,x,y,r);gr.addColorStop(0,'rgba(12,14,15,.34)');gr.addColorStop(1,'rgba(12,14,15,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill()}g.strokeStyle='rgba(22,24,25,.45)';g.lineWidth=2;for(let i=0;i<=8;i++){g.beginPath();g.moveTo(i*64,0);g.lineTo(i*64,512);g.stroke();g.beginPath();g.moveTo(0,i*64);g.lineTo(512,i*64);g.stroke()}const t=new R.CanvasTexture(c);t.wrapS=t.wrapT=R.RepeatWrapping;t.repeat.set(4,4);t.colorSpace=R.SRGBColorSpace;return t})();
+const indFloorMat=new R.MeshStandardMaterial({color:0xffffff,map:indConcreteTex,roughness:.96,metalness:.04}),indWallMat=new R.MeshStandardMaterial({color:0x555b5e,roughness:.72,metalness:.48}),indAccentMat=new R.MeshStandardMaterial({color:0xb94e1b,roughness:.78,metalness:.12}),indYellowMat=new R.MeshStandardMaterial({color:0xd4a51d,roughness:.82,metalness:.08}),indDarkMat=new R.MeshStandardMaterial({color:0x24282b,roughness:.8,metalness:.45}),indRustMat=new R.MeshStandardMaterial({color:0x754329,roughness:.9,metalness:.25});
 function customBox(mi,x,z,w,h,d,material,collide=true){const me=new R.Mesh(new R.BoxGeometry(w,h,d),material);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me);if(collide)customMapBoxes[mi].push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
 function customFloor(mi,size,material){const me=new R.Mesh(new R.PlaneGeometry(size,size),material);me.rotation.x=-Math.PI/2;me.position.y=.015;me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me)}
 // DÉSERT : terrain moyen, canyons et ruines en grès.
@@ -397,6 +400,46 @@ for(const a of [[0,-120,244,9,2],[0,120,244,9,2],[-120,0,2,9,244],[120,0,2,9,244
 for(let row=0;row<4;row++)for(let col=0;col<5;col++){const x=-78+col*38,z=-70+row*43;if(Math.abs(x)<20&&Math.abs(z)<20)continue;customBox(2,x,z,12+(col%2)*5,4+(row%2)*2,5,col%2?indAccentMat:indWallMat)}
 for(const a of [[-38,0,22,5,12],[38,0,22,5,12],[0,-38,12,3,24],[0,38,12,3,24],[-82,80,30,7,12],[82,-80,30,7,12],[0,0,10,2,10]])customBox(2,...a,indWallMat);
 for(let i=0;i<8;i++){const x=-98+i*28;customBox(2,x,0,1,8,1,indAccentMat,false)}
+// Entrepôts réalistes aux bords : façades segmentées avec portes et espaces de passage.
+for(const [x,z,w,d] of [[-88,-91,42,18],[78,-91,48,18],[-88,91,42,18],[78,91,48,18]]){
+  customBox(2,x-w/2+1,z,w,9,1.4,indWallMat);customBox(2,x+w/2-1,z,w,9,1.4,indWallMat);
+  customBox(2,x,z-d/2,w,9,1.4,indWallMat);customBox(2,x,z+d/2,w,9,1.4,indWallMat);
+  customBox(2,x,z, w-3,.45,d-3,indDarkMat,false);
+  // Poutres et toit métallique au-dessus des hangars.
+  customBox(2,x,z, w, .7,d,indDarkMat,false).position.y=9.2;
+  for(const dx of [-w*.38,-w*.15,w*.15,w*.38])customBox(2,x+dx,z, .45,8.8,.55,indAccentMat,false);
+}
+// Marquages au sol : voies de circulation et zones de sécurité jaune/noir.
+for(const z of [-48,48]){
+  customBox(2,0,z,205,.035,.22,indYellowMat,false);
+  for(let x=-96;x<100;x+=12)customBox(2,x,z+2,5,.04,.18,indYellowMat,false);
+}
+for(const [x,z] of [[-100,-22],[100,22],[-48,82],[48,-82]]){
+  customBox(2,x,z,12,.05,1.2,indYellowMat,false);
+  for(let k=0;k<5;k++)customBox(2,x-5+k*2.5,z,1.1,.06,1.6,indDarkMat,false);
+}
+// Tuyauterie, poutres, palettes, bobines de câble et fûts industriels.
+const indPipeGeo=new R.CylinderGeometry(.28,.28,18,10),indPipe2Geo=new R.CylinderGeometry(.18,.18,12,8);
+for(const [x,z,rot] of [[-54,-48,0],[54,-48,0],[-54,48,0],[54,48,0]]){
+  const pipe=new R.Mesh(indPipeGeo,indRustMat);pipe.rotation.z=Math.PI/2;pipe.position.set(x,6,z);pipe.visible=false;pipe.castShadow=true;scene.add(pipe);customMapMeshes[2].push(pipe);
+  for(const dx of [-7,0,7])customBox(2,x+dx,z,.45,7,.45,indDarkMat,false);
+  const lower=new R.Mesh(indPipe2Geo,indWallMat);lower.rotation.z=Math.PI/2;lower.position.set(x,4.7,z+1.1);lower.visible=false;lower.castShadow=true;scene.add(lower);customMapMeshes[2].push(lower);
+}
+for(const [x,z] of [[-98,-58],[-90,-54],[-82,-58],[88,56],[96,60],[104,56],[-10,-88],[8,86]]){
+  const barrel=new R.Mesh(new R.CylinderGeometry(.65,.7,1.5,12),indRustMat);barrel.position.set(x,.75,z);barrel.castShadow=true;barrel.visible=false;scene.add(barrel);customMapMeshes[2].push(barrel);customMapBoxes[2].push({x0:x-.7,x1:x+.7,z0:z-.7,z1:z+.7,top:1.5,cx:x,cz:z,r:.8});
+  const rim=new R.Mesh(new R.TorusGeometry(.62,.055,6,12),indDarkMat);rim.rotation.x=Math.PI/2;rim.position.set(x,1.3,z);rim.visible=false;scene.add(rim);customMapMeshes[2].push(rim);
+}
+for(const [x,z] of [[-70,-22],[-18,22],[34,-22],[82,22],[-70,62],[70,-62]]){
+  // Piles de palettes en bois avec collision de couverture.
+  for(let row=0;row<3;row++)customBox(2,x,z+row*.42,2.8,.32,1.8,indRustMat);
+  customBox(2,x,z,3.2,1.5,2.1,indDarkMat,false);
+}
+// Barrières de chantier rayées et postes de travail.
+for(const [x,z] of [[-38,-62],[38,62],[-12,70],[12,-70]]){
+  customBox(2,x,z,7,1.15,.35,indYellowMat);
+  for(let k=-2;k<=2;k++)customBox(2,x+k*1.35,z-.02,.38,1.18,.4,indDarkMat,false);
+  customBox(2,x,z,7,.18,.55,indDarkMat,false).position.y=1.12;
+}
 
 // FORÊT OUBLIÉE : clairières, troncs et blocs de pierre, terrain moyen.
 const forestFloorMat=new R.MeshStandardMaterial({color:0x30432b,roughness:1}),forestTrunkMat=new R.MeshStandardMaterial({color:0x49382a,roughness:1}),forestRockMat=new R.MeshStandardMaterial({color:0x58604e,roughness:1}),forestLeafMat=new R.MeshStandardMaterial({color:0x254d2d,roughness:1});
