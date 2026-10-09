@@ -495,6 +495,71 @@ for(const a of [[-82,0,10,2.5,5],[82,0,10,2.5,5],[-38,-20,9,2.2,4],[38,20,9,2.2,
  [[-25,-25,5,1.8,3],[25,25,5,1.8,3],[-25,25,5,1.8,3],[25,-25,5,1.8,3],[-5,-28,7,1.7,2],[5,28,7,1.7,2],[-29,0,2,1.8,7],[29,0,2,1.8,7],[-8,8,5,1.8,2],[8,-8,5,1.8,2],[0,-7,2,1.8,5],[0,7,2,1.8,5]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
  for(const z of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(62,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
  for(const x of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,62),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
+/* ---- murs et blocs améliorés : panneaux, bordures, renforts et boulons ---- */
+const wallDetailMats=[
+ new R.MeshStandardMaterial({color:0x566166,roughness:.72,metalness:.48}),
+ new R.MeshStandardMaterial({color:0xb58a54,roughness:.92,metalness:.05}),
+ new R.MeshStandardMaterial({color:0x252a2d,roughness:.65,metalness:.62}),
+ new R.MeshStandardMaterial({color:0x3d5967,roughness:.42,metalness:.78}),
+ new R.MeshStandardMaterial({color:0x594c3b,roughness:.96,metalness:.02}),
+ new R.MeshStandardMaterial({color:0x6c737c,roughness:.72,metalness:.35}),
+ new R.MeshStandardMaterial({color:0x829aa6,roughness:.65,metalness:.25}),
+ new R.MeshStandardMaterial({color:0x9b8764,roughness:.96,metalness:.02})
+];
+const wallTrimMats=[
+ new R.MeshStandardMaterial({color:0xc2a45d,roughness:.65,metalness:.42}),
+ new R.MeshStandardMaterial({color:0x4e3d2a,roughness:.9}),
+ indAccentMat,smallGlowMat,forestLeafMat,cityGlassMat,iceGlowMat,templeGoldMat
+];
+function visualBox(mi,x,y,z,w,h,d,material){
+ const mesh=new R.Mesh(new R.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.visible=false;scene.add(mesh);customMapMeshes[mi].push(mesh);return mesh;
+}
+function decoratePerimeter(mi,half,height,wallMat,trimMat,segment=10){
+ // Plaques segmentées posées sur la face intérieure des murs, sans modifier les collisions.
+ for(let t=-half+segment/2;t<half;t+=segment){
+  for(const sign of [-1,1]){
+   visualBox(mi,t,height*.58,sign*(half-.95),segment-.45,height*.62,.10,wallMat);
+   visualBox(mi,t,height*.24,sign*(half-1.02),segment-.5,.12,.16,trimMat);
+   visualBox(mi,t,height*.9,sign*(half-.98),segment-.45,.16,.14,trimMat);
+   visualBox(mi,sign*(half-.95),height*.58,t,.10,height*.62,segment-.45,wallMat);
+   visualBox(mi,sign*(half-1.02),height*.24,t,.16,.12,segment-.5,trimMat);
+   visualBox(mi,sign*(half-.98),height*.9,t,.14,.16,segment-.45,trimMat);
+   // petits boulons visuels sur chaque panneau
+   for(const off of [-segment*.32,segment*.32]){
+    visualBox(mi,t+off,height*.34,sign*(half-1.12),.12,.12,.035,trimMat);
+    visualBox(mi,sign*(half-1.12),height*.34,t+off,.035,.12,.12,trimMat);
+   }
+  }
+ }
+}
+function detailBlock(mi,x,z,w,h,d,faceMat,trimMat){
+ // Plaque frontale, bande de renfort, cornières et rebord supérieur décoratifs.
+ const faceZ=z+d/2+.035;
+ visualBox(mi,x,h*.57,faceZ,w*.72,h*.48,.07,faceMat);
+ visualBox(mi,x,h*.31,faceZ+.045,w*.76,.13,.09,trimMat);
+ visualBox(mi,x-w*.39,h*.52,faceZ+.05,.12,h*.82,.10,trimMat);
+ visualBox(mi,x+w*.39,h*.52,faceZ+.05,.12,h*.82,.10,trimMat);
+ visualBox(mi,x,h+.045,z,w+.12,.09,d+.12,trimMat);
+ for(const sx of [-1,1])for(const sy of [.34,.72])visualBox(mi,x+sx*w*.31,h*sy,faceZ+.105,.10,.10,.035,trimMat);
+}
+// Chaque enceinte reçoit des murs segmentés et des arêtes plus lisibles.
+[[0,100,6],[1,70,7],[2,120,9],[3,36,5],[4,50,6],[5,90,9],[6,36,5],[7,110,10]].forEach(([mi,half,h])=>decoratePerimeter(mi,half,h,wallDetailMats[mi],wallTrimMats[mi],mi===3||mi===6?6:10));
+// Habillage des blocs emblématiques : les pièces décoratives restent sans collision.
+[
+ [0,[-28,-28,16,9,14],[28,-26,14,7,16],[-26,26,12,6,18],[30,30,16,10,12]],
+ [1,[-38,-34,18,7,8],[24,-38,22,9,8],[-38,18,20,6,9],[23,22,12,8,12]],
+ [2,[-78,-70,17,4,5],[-2,-70,17,4,5],[74,-70,17,4,5],[-78,59,17,6,5],[74,59,17,6,5]],
+ [3,[-16,-18,5,4,12],[16,18,5,4,12],[-26,-10,8,3,3],[26,10,8,3,3],[0,0,4,2,4]],
+ [4,[-28,-8,9,2,5],[26,-8,7,3,8],[-8,14,6,2,9],[5,-20,10,2,4]],
+ [5,[-65,-58,22,16,18],[-25,-62,18,22,22],[42,-62,24,18,18],[20,52,18,22,24]],
+ [6,[-22,-20,12,5,8],[20,-21,10,4,12],[-22,18,9,6,10],[22,18,12,4,8]],
+ [7,[-48,-40,26,6,8],[48,-40,26,6,8],[-48,40,26,6,8],[48,40,26,6,8]]
+].forEach(([mi,...blocks])=>blocks.forEach(([x,z,w,h,d])=>detailBlock(mi,x,z,w,h,d,wallDetailMats[mi],wallTrimMats[mi])));
+// Renforts verticaux sur les murs industriels, panneaux de béton en ville et joints de pierre au temple.
+for(let x=-108;x<=108;x+=18){visualBox(2,x,4.5,-119, .28,8.5,.18,indAccentMat);visualBox(2,x,4.5,119,.28,8.5,.18,indAccentMat)}
+for(let x=-80;x<=80;x+=20){visualBox(5,x,4.5,-89,.18,8.2,.16,cityGlassMat);visualBox(5,x,4.5,89,.18,8.2,.16,cityGlassMat)}
+for(let x=-100;x<=100;x+=20){visualBox(7,x,5.1,-108,.35,9.4,.20,templeGoldMat);visualBox(7,x,5.1,108,.35,9.4,.20,templeGoldMat)}
+
 /* ---- amélioration graphique des huit maps : textures, reliefs et détails ---- */
 function floorTexture(draw,repeat){const tex=ctex((g)=>{g.fillStyle='#555';g.fillRect(0,0,256,256);draw(g)},repeat);tex.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());return tex}
 function dressFloor(material,draw,repeat,normalStrength=1.15){const tex=floorTexture(draw,repeat);material.map=tex;material.normalMap=normalTex(tex,normalStrength);material.normalScale.set(.42,.42);material.needsUpdate=true}
