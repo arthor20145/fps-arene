@@ -323,7 +323,7 @@ const B=100,K=B/60,boxes=[],bm=[];
 let mapIndex=0;
 const smallMapMeshes=[],smallMapBoxes=[],customMapMeshes=Array.from({length:8},()=>[]),customMapBoxes=Array.from({length:8},()=>[]);
 const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x45494b,wall:0x3a3f42,sky:0x414b52,accent:0xb94e1b},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8},{name:'FORÊT OUBLIÉE',ground:0x263b27,wall:0x30452d,sky:0x15251b,accent:0x587447},{name:'CENTRE-VILLE',ground:0x55545a,wall:0x36383e,sky:0x303746,accent:0xb45b39},{name:'BASE ARCTIQUE',ground:0x9aaeba,wall:0x657986,sky:0x9eb8c8,accent:0x4bd5e8},{name:'TEMPLE ANCIEN',ground:0x78664b,wall:0x544631,sky:0x554735,accent:0xc5a15b}];
-function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;const scales=[1,.7,1.22,.22,.5,.9,.36,1.1],fogNear=[30,22,38,12,18,28,16,34],fogFar=[210,125,270,52,145,210,105,245];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true;const sc=scales[mapIndex]||1;ground.scale.set(sc,1,sc)}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=fogNear[mapIndex]||25;scene.fog.far=fogFar[mapIndex]||180}for(const q of bm){if(q){q.visible=mapIndex===0;if(q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}}if(typeof decor!=='undefined')decor.visible=mapIndex===0;for(let i=0;i<customMapMeshes.length;i++)for(const q of customMapMeshes[i])q.visible=i===mapIndex;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+' · '+(['GRANDE','MOYENNE','GRANDE','PETITE','MOYENNE','GRANDE','PETITE','TRÈS GRANDE'][mapIndex]),2.2,30)}
+function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;const scales=[1,.7,1.22,.36,.5,.9,.36,1.1],fogNear=[30,22,38,18,18,28,16,34],fogFar=[210,125,270,92,145,210,105,245];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true;const sc=scales[mapIndex]||1;ground.scale.set(sc,1,sc)}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=fogNear[mapIndex]||25;scene.fog.far=fogFar[mapIndex]||180}for(const q of bm){if(q){q.visible=mapIndex===0;if(q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}}if(typeof decor!=='undefined')decor.visible=mapIndex===0;for(let i=0;i<customMapMeshes.length;i++)for(const q of customMapMeshes[i])q.visible=i===mapIndex;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+' · '+(['GRANDE','MOYENNE','GRANDE','MOYENNE','MOYENNE','GRANDE','PETITE','TRÈS GRANDE'][mapIndex]),2.2,30)}
 
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function addBox(x,z,w,h,d,m){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);
@@ -482,18 +482,19 @@ for(const a of [[-25,-7,6,2,3],[24,5,6,2,3],[-7,27,7,1.8,3],[7,-27,7,1.8,3],[-27
 // TEMPLE : fragments de murs et blocs de pierre pour multiplier les angles de couverture.
 for(const a of [[-82,0,10,2.5,5],[82,0,10,2.5,5],[-38,-20,9,2.2,4],[38,20,9,2.2,4],[-18,48,8,2.3,4],[18,-48,8,2.3,4],[-78,48,8,2.2,4],[78,-48,8,2.2,4],[0,-82,10,2.4,4],[0,82,10,2.4,4]])customBox(7,...a,templeStoneMat);
 
-/* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
+/* ---- LABO NÉON agrandi : 72 x 72, avec couloirs et salles latérales ---- */
  const smallWallMat=new R.MeshStandardMaterial({color:0x26313b,roughness:.62,metalness:.72,envMapIntensity:.8});
  const smallFloorMat=new R.MeshStandardMaterial({color:0x171b21,roughness:.82,metalness:.28,envMapIntensity:.45});
  const smallGlowMat=new R.MeshStandardMaterial({color:0x19a8a8,emissive:0x087777,emissiveIntensity:2.2,roughness:.35,metalness:.45});
  function addSmallBox(x,z,w,h,d,m=smallWallMat){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);smallMapMeshes.push(me);smallMapBoxes.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
- const smallFloor=new R.Mesh(new R.PlaneGeometry(44,44),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
- addSmallBox(0,-22,44,5,1);addSmallBox(0,22,44,5,1);addSmallBox(-22,0,1,5,44);addSmallBox(22,0,1,5,44);
- [[-10,-9,3,4,10],[10,9,3,4,10],[-10,9,8,2,3],[10,-9,8,2,3],[-8,0,3,2,5],[8,0,3,2,5],[0,-10,5,2,3],[0,10,5,2,3]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
-// Couvertures basses supplémentaires dans les angles et le long des couloirs.
-[[-15,-14,4,1.8,3],[15,14,4,1.8,3],[-15,14,4,1.8,3],[15,-14,4,1.8,3],[-4,-16,5,1.7,2],[4,16,5,1.7,2],[-16,0,2,1.8,5],[16,0,2,1.8,5]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
- for(const z of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(38,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
- for(const x of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,38),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
+ const smallFloor=new R.Mesh(new R.PlaneGeometry(72,72),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
+ addSmallBox(0,-36,72,5,1);addSmallBox(0,36,72,5,1);addSmallBox(-36,0,1,5,72);addSmallBox(36,0,1,5,72);
+ // Modules de laboratoire : salles latérales, cloisons et passages ouverts.
+ [[-16,-18,5,4,12],[16,18,5,4,12],[-16,18,12,2.5,4],[16,-18,12,2.5,4],[-13,0,3,3,9],[13,0,3,3,9],[0,-16,8,2.5,4],[0,16,8,2.5,4],[-26,-10,8,3,3],[26,10,8,3,3],[-26,12,3,3,10],[26,-12,3,3,10],[-7,-27,12,3,3],[7,27,12,3,3],[0,0,4,2,4]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
+ // Couvertures basses et consoles pour multiplier les itinéraires sans bloquer les passages.
+ [[-25,-25,5,1.8,3],[25,25,5,1.8,3],[-25,25,5,1.8,3],[25,-25,5,1.8,3],[-5,-28,7,1.7,2],[5,28,7,1.7,2],[-29,0,2,1.8,7],[29,0,2,1.8,7],[-8,8,5,1.8,2],[8,-8,5,1.8,2],[0,-7,2,1.8,5],[0,7,2,1.8,5]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
+ for(const z of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(62,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
+ for(const x of [-28,-20,-10,10,20,28]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,62),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
  /* poussières flottantes */
  const dust=(()=>{const n=900,pa=new Float32Array(n*3);for(let i=0;i<n;i++){pa[i*3]=(rnd()-.5)*110*K;pa[i*3+1]=rnd()*14;pa[i*3+2]=(rnd()-.5)*110*K}
   const g=new R.BufferGeometry();g.setAttribute('position',new R.BufferAttribute(pa,3));
