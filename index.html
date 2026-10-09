@@ -424,6 +424,21 @@ for(const [x,z] of [[-75,-72],[-38,-72],[38,-72],[75,-72],[-75,72],[-38,72],[38,
 for(const a of [[-48,-40,26,6,8],[48,-40,26,6,8],[-48,40,26,6,8],[48,40,26,6,8],[0,-58,30,4,5],[0,58,30,4,5],[-58,0,5,3,30],[58,0,5,3,30],[-25,0,5,5,20],[25,0,5,5,20],[0,-20,20,4,5],[0,20,20,4,5]])customBox(7,...a,templeStoneMat);
 for(const [x,z] of [[-10,-10],[10,-10],[-10,10],[10,10]])customBox(7,x,z,2,3,2,templeGoldMat,false);
 
+/* ---- couvertures supplémentaires : cachettes et petits abris sur chaque map ---- */
+// DÉSERT : rochers bas et morceaux de murs pour casser les lignes de tir.
+for(const a of [[-50,-12,9,2.2,4],[-31,6,7,2.6,3],[18,-12,8,2.4,4],[48,22,7,2.2,4],[-8,43,10,2.5,3],[6,-48,8,2.3,4],[34,4,5,2,6],[-48,38,6,2.2,5]])customBox(1,...a,rockMat);
+// ZONE INDUSTRIELLE : palettes, caisses et barrières de chantier, avec des passages entre elles.
+for(const a of [[-94,-42,8,2.1,3],[-56,-18,7,2.4,4],[-18,-72,9,2.2,3],[22,-18,8,2.5,3],[58,-52,7,2.2,4],[92,42,8,2.4,3],[-74,48,9,2.3,3],[-30,74,7,2.2,4],[48,68,10,2.3,3],[82,-8,6,2.5,5],[0,56,7,2.2,3]])customBox(2,...a,indAccentMat);
+// FORÊT : rochers, troncs tombés et buissons solides pour créer de vrais couverts.
+for(const a of [[-38,-16,10,1.8,3],[-24,0,8,2,3],[2,-28,11,1.7,3],[17,18,9,2,3],[38,-2,8,1.8,4],[-8,38,10,2,3],[-40,32,7,2,3],[30,38,9,1.8,3]])customBox(4,...a,forestRockMat);
+for(const [x,z] of [[-40,-38],[-12,-8],[12,-40],[40,12],[-30,40],[8,6],[34,32]]){const bush=new R.Mesh(new R.DodecahedronGeometry(2.1,1),forestLeafMat);bush.position.set(x,1.15,z);bush.scale.set(1.35,.8,1.1);bush.castShadow=true;bush.visible=false;scene.add(bush);customMapMeshes[4].push(bush);customMapBoxes[4].push({x0:x-2.2,x1:x+2.2,z0:z-2,z1:z+2,top:2.3,cx:x,cz:z,r:2.5})}
+// CENTRE-VILLE : carcasses basses, murets et abris dans les rues.
+for(const a of [[-48,-30,8,1.7,3],[-6,-58,9,1.8,3],[38,-30,8,1.6,3],[72,4,7,1.8,3],[-48,32,9,1.7,3],[0,62,8,1.8,3],[42,32,8,1.6,3],[-78,-24,6,1.8,4],[78,38,6,1.8,4]])customBox(5,...a,cityWallMat);
+// BASE ARCTIQUE : caisses de ravitaillement et murets de neige.
+for(const a of [[-25,-7,6,2,3],[24,5,6,2,3],[-7,27,7,1.8,3],[7,-27,7,1.8,3],[-27,8,4,2.2,5],[27,-8,4,2.2,5],[0,15,5,1.8,3]])customBox(6,...a,iceWallMat);
+// TEMPLE : fragments de murs et blocs de pierre pour multiplier les angles de couverture.
+for(const a of [[-82,0,10,2.5,5],[82,0,10,2.5,5],[-38,-20,9,2.2,4],[38,20,9,2.2,4],[-18,48,8,2.3,4],[18,-48,8,2.3,4],[-78,48,8,2.2,4],[78,-48,8,2.2,4],[0,-82,10,2.4,4],[0,82,10,2.4,4]])customBox(7,...a,templeStoneMat);
+
 /* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
  const smallWallMat=new R.MeshStandardMaterial({color:0x26313b,roughness:.62,metalness:.72,envMapIntensity:.8});
  const smallFloorMat=new R.MeshStandardMaterial({color:0x171b21,roughness:.82,metalness:.28,envMapIntensity:.45});
@@ -432,6 +447,8 @@ for(const [x,z] of [[-10,-10],[10,-10],[-10,10],[10,10]])customBox(7,x,z,2,3,2,t
  const smallFloor=new R.Mesh(new R.PlaneGeometry(44,44),smallFloorMat);smallFloor.rotation.x=-Math.PI/2;smallFloor.position.y=.01;smallFloor.receiveShadow=true;scene.add(smallFloor);smallMapMeshes.push(smallFloor);
  addSmallBox(0,-22,44,5,1);addSmallBox(0,22,44,5,1);addSmallBox(-22,0,1,5,44);addSmallBox(22,0,1,5,44);
  [[-10,-9,3,4,10],[10,9,3,4,10],[-10,9,8,2,3],[10,-9,8,2,3],[-8,0,3,2,5],[8,0,3,2,5],[0,-10,5,2,3],[0,10,5,2,3]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
+// Couvertures basses supplémentaires dans les angles et le long des couloirs.
+[[-15,-14,4,1.8,3],[15,14,4,1.8,3],[-15,14,4,1.8,3],[15,-14,4,1.8,3],[-4,-16,5,1.7,2],[4,16,5,1.7,2],[-16,0,2,1.8,5],[16,0,2,1.8,5]].forEach(a=>addSmallBox(a[0],a[1],a[2],a[3],a[4]));
  for(const z of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(38,.05,.16),smallGlowMat);strip.position.set(0,.055,z);scene.add(strip);smallMapMeshes.push(strip)}
  for(const x of [-16,-8,8,16]){const strip=new R.Mesh(new R.BoxGeometry(.16,.05,38),smallGlowMat);strip.position.set(x,.06,0);scene.add(strip);smallMapMeshes.push(strip)}
  /* poussières flottantes */
@@ -1247,7 +1264,7 @@ function update(dt){
  let dx=-Math.sin(P.yaw)*f+Math.cos(P.yaw)*s,dz=-Math.cos(P.yaw)*f-Math.sin(P.yaw)*s;const l=Math.hypot(dx,dz);if(l>0){dx/=l;dz/=l}
  const ac=Math.min(1,dt*(P.ground?10:2));P.vel.x+=(dx*spd-P.vel.x)*ac;P.vel.z+=(dz*spd-P.vel.z)*ac;
  if(k.Space&&P.ground){P.vel.y=8;P.ground=false}P.vel.y-=25*dt;
- P.pos.x=Math.max(-B+.5,Math.min(B-.5,P.pos.x+P.vel.x*dt));P.pos.z=Math.max(-B+.5,Math.min(B-.5,P.pos.z+P.vel.z*dt));P.pos.y+=P.vel.y*dt;
+ const playLim=MAP_LIMITS[mapIndex]-2;P.pos.x=Math.max(-playLim,Math.min(playLim,P.pos.x+P.vel.x*dt));P.pos.z=Math.max(-playLim,Math.min(playLim,P.pos.z+P.vel.z*dt));P.pos.y+=P.vel.y*dt;
  const g=collide(P.pos,.4);if(P.pos.y<=g){P.pos.y=g;P.vel.y=0;P.ground=true}else P.ground=false;
  P.pitch=Math.max(-1.5,Math.min(1.5,P.pitch));P.hh+=((crouch?1.1:1.7)-P.hh)*Math.min(1,dt*10);
  const hs=Math.hypot(P.vel.x,P.vel.z);if(P.ground&&hs>1){bobT+=dt*hs*1.6;const st=Math.floor(bobT/Math.PI);if(st!==lastStep){lastStep=st;sfx.step()}}
@@ -1362,12 +1379,30 @@ function mkRemote(name){const g=new R.Group(),parts=[];
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
 const MAP_LIMITS=[90,60,105,18,45,82,31,100];
-function spawnPointClear(x,z,lim,bs){if(Math.abs(x)>lim||Math.abs(z)>lim)return false;return bs.every(b=>!(x>b.x0-1&&x<b.x1+1&&z>b.z0-1&&z<b.z1+1))}
+function spawnPointClear(x,z,lim,bs){
+ if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>lim||Math.abs(z)>lim)return false;
+ // Garder une marge autour du joueur et éviter toutes les collisions actives de la map.
+ return bs.every(b=>!(x>b.x0-1.25&&x<b.x1+1.25&&z>b.z0-1.25&&z<b.z1+1.25));
+}
 function respawnPos(){
- const lim=MAP_LIMITS[mapIndex]-2,bs=activeBoxes();let found=false;
- for(let i=0;i<160;i++){const x=(rnd()*2-1)*lim,z=(rnd()*2-1)*lim;if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}}
- if(!found){for(let r=0;r<=lim&&!found;r+=3){for(let x=-lim;x<=lim&&!found;x+=3)for(let z=-lim;z<=lim;z+=3){if(Math.abs(x)<r-3||Math.abs(z)<r-3)continue;if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}}}}
- if(!found)P.pos.set(0,0,0);P.pos.x=Math.max(-lim,Math.min(lim,P.pos.x));P.pos.z=Math.max(-lim,Math.min(lim,P.pos.z));P.vel.set(0,0,0)
+ const lim=Math.max(2,MAP_LIMITS[mapIndex]-3),bs=activeBoxes();let found=false;
+ // Essayer d'abord plusieurs points répartis sur la map, puis parcourir une grille complète.
+ for(let i=0;i<300;i++){
+  const x=(rnd()*2-1)*lim,z=(rnd()*2-1)*lim;
+  if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}
+ }
+ if(!found){
+  for(let radius=0;radius<=lim&&!found;radius+=2){
+   for(let x=-lim;x<=lim&&!found;x+=2)for(let z=-lim;z<=lim;z+=2){
+    if(radius>0&&Math.abs(Math.hypot(x,z)-radius)>2.2)continue;
+    if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}
+   }
+  }
+ }
+ // Dernier recours : point sûr trouvé en balayant toute la zone, jamais un point hors map.
+ if(!found){outer:for(let x=-lim;x<=lim;x+=.5)for(let z=-lim;z<=lim;z+=.5){if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break outer}}}
+ if(!found)P.pos.set(0,0,0);
+ P.pos.x=Math.max(-lim,Math.min(lim,P.pos.x));P.pos.z=Math.max(-lim,Math.min(lim,P.pos.z));P.vel.set(0,0,0);
 }
 const shEl=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 140px 40px rgba(70,170,255,.6);border:3px solid rgba(120,200,255,.5)';document.body.appendChild(d);return d})();
 function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
