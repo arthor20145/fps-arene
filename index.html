@@ -1074,6 +1074,7 @@ function changeMapByTimer(){
   const next=(mapIndex+1)%MAPS.length;
   enemies.forEach(e=>scene.remove(e.g)); enemies.length=0; toSpawn=0; spT=0; wt=mp?1e9:2;
   applyMap(next,true);
+  respawnPos();
   P.score=0; P.streak=0; P.points=0;
   wave=0;
   resetMapTimer();
@@ -1193,7 +1194,7 @@ function callStrike(){if((P.sh||0)>T||strikes<=0)return;strikes--;banner('FRAPPE
 function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.position,nx=p.x+u.v.x*dt,nz=p.z+u.v.z*dt;u.v.y-=20*dt;p.addScaledVector(u.v,dt);
  const g=collide(p,.15);if(Math.abs(p.x-nx)>1e-4)u.v.x*=-.5;if(Math.abs(p.z-nz)>1e-4)u.v.z*=-.5;
  if(p.y<=g+.12){p.y=g+.12;if(u.v.y<0)u.v.y*=-.4;if(Math.abs(u.v.y)<.5)u.v.y=0;u.v.x*=.85;u.v.z*=.85}
- const lim=[59,39,112,20,46,84,32,104][mapIndex];p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
+ const lim=MAP_LIMITS[mapIndex]-2;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
  if((u.f-=dt)<=0){m.visible=false;explode(p,8,160)}});
  for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200);air.splice(i,1)}}}
 /* ================= HUD ================= */
@@ -1360,7 +1361,14 @@ function mkRemote(name){const g=new R.Group(),parts=[];
  const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
-function respawnPos(){const lim=[90,60,105,18,45,82,31,100][mapIndex],bs=activeBoxes();for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*2*lim,0,(rnd()-.5)*2*lim);if(bs.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
+const MAP_LIMITS=[90,60,105,18,45,82,31,100];
+function spawnPointClear(x,z,lim,bs){if(Math.abs(x)>lim||Math.abs(z)>lim)return false;return bs.every(b=>!(x>b.x0-1&&x<b.x1+1&&z>b.z0-1&&z<b.z1+1))}
+function respawnPos(){
+ const lim=MAP_LIMITS[mapIndex]-2,bs=activeBoxes();let found=false;
+ for(let i=0;i<160;i++){const x=(rnd()*2-1)*lim,z=(rnd()*2-1)*lim;if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}}
+ if(!found){for(let r=0;r<=lim&&!found;r+=3){for(let x=-lim;x<=lim&&!found;x+=3)for(let z=-lim;z<=lim;z+=3){if(Math.abs(x)<r-3||Math.abs(z)<r-3)continue;if(spawnPointClear(x,z,lim,bs)){P.pos.set(x,0,z);found=true;break}}}}
+ if(!found)P.pos.set(0,0,0);P.pos.x=Math.max(-lim,Math.min(lim,P.pos.x));P.pos.z=Math.max(-lim,Math.min(lim,P.pos.z));P.vel.set(0,0,0)
+}
 const shEl=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 140px 40px rgba(70,170,255,.6);border:3px solid rgba(120,200,255,.5)';document.body.appendChild(d);return d})();
 function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
 function mpTick(dt){const seen=new Set(),peers=room.peers();
@@ -1380,7 +1388,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  }else if(hostPresence&&typeof hostPresence.mt==='number'&&typeof hostPresence.mi==='number'){
    mapTime=Math.max(0,Math.min(MAP_TIME,hostPresence.mt));
    mpMapEndAt=Date.now()+mapTime*1000;
-   if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
+   if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);respawnPos();enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
  }else{if(!mpMapEndAt)resetMapTimer();mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000)}
  room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
