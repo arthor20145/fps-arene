@@ -321,9 +321,9 @@ renderer.setSize(innerWidth,innerHeight);
 /* ================= MAP ================= */
 const B=100,K=B/60,boxes=[],bm=[];
 let mapIndex=0;
-const smallMapMeshes=[],smallMapBoxes=[];
-const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8}];
-function applyMap(index,announce){const old=mapIndex;mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=small?12:30;scene.fog.far=small?52:210}for(const q of bm){if(q)q.visible=!small;if(q&&q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);else if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}if(typeof decor!=='undefined')decor.visible=!small;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+(small?' · PETITE MAP':''),2.2,30)}
+const smallMapMeshes=[],smallMapBoxes=[],customMapMeshes=Array.from({length:8},()=>[]),customMapBoxes=Array.from({length:8},()=>[]);
+const MAPS=[{name:'DOCKS',ground:0x43443d,wall:0x343a3e,sky:0x26323a,accent:0x27505a},{name:'DÉSERT',ground:0x6b6048,wall:0x4a4034,sky:0x514735,accent:0x8a6a3d},{name:'ZONE INDUSTRIELLE',ground:0x35383b,wall:0x24272a,sky:0x20262c,accent:0x3d4c52},{name:'LABO NÉON',ground:0x171b21,wall:0x26313b,sky:0x090d15,accent:0x19a8a8},{name:'FORÊT OUBLIÉE',ground:0x263b27,wall:0x30452d,sky:0x15251b,accent:0x587447},{name:'CENTRE-VILLE',ground:0x55545a,wall:0x36383e,sky:0x303746,accent:0xb45b39},{name:'BASE ARCTIQUE',ground:0x9aaeba,wall:0x657986,sky:0x9eb8c8,accent:0x4bd5e8},{name:'TEMPLE ANCIEN',ground:0x78664b,wall:0x544631,sky:0x554735,accent:0xc5a15b}];
+function applyMap(index,announce){mapIndex=((index%MAPS.length)+MAPS.length)%MAPS.length;const m=MAPS[mapIndex],small=mapIndex===3;const scales=[1,.7,1.22,.22,.5,.9,.36,1.1],fogNear=[30,22,38,12,18,28,16,34],fogFar=[210,125,270,52,145,210,105,245];if(ground&&ground.material){ground.material.color.setHex(m.ground);ground.material.needsUpdate=true;const sc=scales[mapIndex]||1;ground.scale.set(sc,1,sc)}scene.background=new R.Color(m.sky);if(scene.fog){scene.fog.color.setHex(m.sky);scene.fog.near=fogNear[mapIndex]||25;scene.fog.far=fogFar[mapIndex]||180}for(const q of bm){if(q){q.visible=mapIndex===0;if(q.material&&q.material.color){if(q.material===mWall)q.material.color.setHex(m.wall);if(q.material===mContainer)q.material.color.setHex(m.accent);q.material.needsUpdate=true}}}if(typeof decor!=='undefined')decor.visible=mapIndex===0;for(let i=0;i<customMapMeshes.length;i++)for(const q of customMapMeshes[i])q.visible=i===mapIndex;for(const q of smallMapMeshes)q.visible=small;if(announce)banner('MAP : '+m.name+' · '+(['GRANDE','MOYENNE','GRANDE','PETITE','MOYENNE','GRANDE','PETITE','TRÈS GRANDE'][mapIndex]),2.2,30)}
 
 const ground=new R.Mesh(new R.PlaneGeometry(2*B,2*B),mGround);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 function addBox(x,z,w,h,d,m){const me=new R.Mesh(new R.BoxGeometry(w,h,d),m);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;scene.add(me);
@@ -382,7 +382,49 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   const p=dec(new R.Mesh(new R.BoxGeometry(.09,1.7,.09),mMetal),x,.85,z,lc()*6.28);
   for(let k=0;k<5;k++){const w=new R.Mesh(new R.BoxGeometry(2.6,.05,.05),mMetal);w.position.set(0,.2+k*.3,0);p.add(w)}
   contact(x,z,3,3)}
- /* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
+ /* ---- deux layouts supplémentaires réellement différents ---- */
+const desertMat=new R.MeshStandardMaterial({color:0x9b7546,roughness:1}),rockMat=new R.MeshStandardMaterial({color:0x6b5237,roughness:1}),indFloorMat=new R.MeshStandardMaterial({color:0x343b42,roughness:.9}),indWallMat=new R.MeshStandardMaterial({color:0x505b63,roughness:.7,metalness:.35}),indAccentMat=new R.MeshStandardMaterial({color:0xc45b24,roughness:.8});
+function customBox(mi,x,z,w,h,d,material,collide=true){const me=new R.Mesh(new R.BoxGeometry(w,h,d),material);me.position.set(x,h/2,z);me.castShadow=me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me);if(collide)customMapBoxes[mi].push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2,top:h,cx:x,cz:z,r:Math.hypot(w,d)/2});return me}
+function customFloor(mi,size,material){const me=new R.Mesh(new R.PlaneGeometry(size,size),material);me.rotation.x=-Math.PI/2;me.position.y=.015;me.receiveShadow=true;me.visible=false;scene.add(me);customMapMeshes[mi].push(me)}
+// DÉSERT : terrain moyen, canyons et ruines en grès.
+customFloor(1,140,desertMat);
+for(const a of [[0,-70,140,7,2],[0,70,140,7,2],[-70,0,2,7,140],[70,0,2,7,140]])customBox(1,...a,rockMat);
+for(const a of [[-38,-34,18,7,8],[-14,-34,10,4,16],[24,-38,22,9,8],[42,-8,8,5,22],[-38,18,20,6,9],[-7,28,24,4,8],[23,22,12,8,12],[0,-3,8,3,8],[0,10,18,2,3],[-22,-6,3,5,3],[32,42,3,8,3]])customBox(1,...a,rockMat);
+for(const x of [-52,-28,14,51]){const pillar=new R.Mesh(new R.CylinderGeometry(1.5,2,7,6),desertMat);pillar.position.set(x,3.5,(x%2)*18);pillar.castShadow=true;scene.add(pillar);customMapMeshes[1].push(pillar);customMapBoxes[1].push({x0:x-1.5,x1:x+1.5,z0:(x%2)*18-1.5,z1:(x%2)*18+1.5,top:7,cx:x,cz:(x%2)*18,r:2})}
+// ZONE INDUSTRIELLE : grande cour avec hangars, passerelles basses et rangées de conteneurs.
+customFloor(2,244,indFloorMat);
+for(const a of [[0,-120,244,9,2],[0,120,244,9,2],[-120,0,2,9,244],[120,0,2,9,244]])customBox(2,...a,indWallMat);
+for(let row=0;row<4;row++)for(let col=0;col<5;col++){const x=-78+col*38,z=-70+row*43;if(Math.abs(x)<20&&Math.abs(z)<20)continue;customBox(2,x,z,12+(col%2)*5,4+(row%2)*2,5,col%2?indAccentMat:indWallMat)}
+for(const a of [[-38,0,22,5,12],[38,0,22,5,12],[0,-38,12,3,24],[0,38,12,3,24],[-82,80,30,7,12],[82,-80,30,7,12],[0,0,10,2,10]])customBox(2,...a,indWallMat);
+for(let i=0;i<8;i++){const x=-98+i*28;customBox(2,x,0,1,8,1,indAccentMat,false)}
+
+// FORÊT OUBLIÉE : clairières, troncs et blocs de pierre, terrain moyen.
+const forestFloorMat=new R.MeshStandardMaterial({color:0x30432b,roughness:1}),forestTrunkMat=new R.MeshStandardMaterial({color:0x49382a,roughness:1}),forestRockMat=new R.MeshStandardMaterial({color:0x58604e,roughness:1}),forestLeafMat=new R.MeshStandardMaterial({color:0x254d2d,roughness:1});
+customFloor(4,100,forestFloorMat);
+for(const a of [[0,-50,100,6,2],[0,50,100,6,2],[-50,0,2,6,100],[50,0,2,6,100]])customBox(4,...a,forestTrunkMat);
+for(const [x,z,r,h] of [[-32,-28,2,8],[-20,20,2.4,10],[27,-30,2,9],[34,18,2.2,11],[-4,-35,1.8,7],[9,30,2,8],[-36,4,2.2,9],[20,2,1.8,7]]){customBox(4,x,z,r*2,h,r*2,forestTrunkMat);customBox(4,x,z,r*4,1.4,r*4,forestLeafMat,false)}
+for(const a of [[-28,-8,9,2,5],[26,-8,7,3,8],[-8,14,6,2,9],[5,-20,10,2,4],[32,34,8,2,5]])customBox(4,...a,forestRockMat);
+// CENTRE-VILLE : rues larges, immeubles et ruelles de combat.
+const cityFloorMat=new R.MeshStandardMaterial({color:0x45464a,roughness:.95}),cityWallMat=new R.MeshStandardMaterial({color:0x555b65,roughness:.85}),cityBrickMat=new R.MeshStandardMaterial({color:0x805b50,roughness:.9}),cityGlassMat=new R.MeshStandardMaterial({color:0x253f50,roughness:.35,metalness:.5});
+customFloor(5,180,cityFloorMat);
+for(const a of [[0,-90,180,9,2],[0,90,180,9,2],[-90,0,2,9,180],[90,0,2,9,180]])customBox(5,...a,cityWallMat);
+for(const [x,z,w,d,h] of [[-65,-58,22,18,16],[-25,-62,18,22,22],[42,-62,24,18,18],[68,-30,15,22,13],[-67,8,20,18,20],[-30,48,24,18,15],[20,52,18,24,22],[62,58,22,16,17],[-62,62,14,15,12],[52,8,18,20,24]]){customBox(5,x,z,w,h,d,cityBrickMat);customBox(5,x,z,w+.2,Math.max(1,h*.48),d+.25,cityGlassMat,false).position.y=h*.72}
+for(const a of [[0,-30,4,1.5,42],[0,30,4,1.5,42],[-12,0,30,1.5,3],[14,0,28,1.5,3]])customBox(5,...a,cityWallMat);
+// BASE ARCTIQUE : petite base enneigée, modules et barrières glacées.
+const iceFloorMat=new R.MeshStandardMaterial({color:0xb5c9d4,roughness:.9}),iceWallMat=new R.MeshStandardMaterial({color:0x617e91,roughness:.7,metalness:.25}),iceGlowMat=new R.MeshStandardMaterial({color:0x43cbe0,emissive:0x126b83,emissiveIntensity:1.3,roughness:.3});
+customFloor(6,72,iceFloorMat);
+for(const a of [[0,-36,72,5,2],[0,36,72,5,2],[-36,0,2,5,72],[36,0,2,5,72]])customBox(6,...a,iceWallMat);
+for(const a of [[-22,-20,12,5,8],[20,-21,10,4,12],[-22,18,9,6,10],[22,18,12,4,8],[0,-24,12,2,3],[0,24,12,2,3],[-13,0,3,2,16],[13,0,3,2,16],[0,0,8,3,8]])customBox(6,...a,iceWallMat);
+for(const [x,z] of [[-28,-28],[28,-28],[-28,28],[28,28]])customBox(6,x,z,1,4,1,iceGlowMat,false);
+// TEMPLE ANCIEN : grande arène de ruines, colonnes et cours intérieures.
+const templeFloorMat=new R.MeshStandardMaterial({color:0x817052,roughness:1}),templeStoneMat=new R.MeshStandardMaterial({color:0x62533a,roughness:.95}),templeGoldMat=new R.MeshStandardMaterial({color:0xa88a4f,roughness:.7,metalness:.2});
+customFloor(7,220,templeFloorMat);
+for(const a of [[0,-110,220,10,3],[0,110,220,10,3],[-110,0,3,10,220],[110,0,3,10,220]])customBox(7,...a,templeStoneMat);
+for(const [x,z] of [[-75,-72],[-38,-72],[38,-72],[75,-72],[-75,72],[-38,72],[38,72],[75,72],[-72,-30],[-72,30],[72,-30],[72,30]]){customBox(7,x,z,4,12,4,templeGoldMat);customBox(7,x,z,6,1,6,templeStoneMat,false).position.y=11.5}
+for(const a of [[-48,-40,26,6,8],[48,-40,26,6,8],[-48,40,26,6,8],[48,40,26,6,8],[0,-58,30,4,5],[0,58,30,4,5],[-58,0,5,3,30],[58,0,5,3,30],[-25,0,5,5,20],[25,0,5,5,20],[0,-20,20,4,5],[0,20,20,4,5]])customBox(7,...a,templeStoneMat);
+for(const [x,z] of [[-10,-10],[10,-10],[-10,10],[10,10]])customBox(7,x,z,2,3,2,templeGoldMat,false);
+
+/* ---- petite map alternative : LABO NÉON, ~44 x 44 ---- */
  const smallWallMat=new R.MeshStandardMaterial({color:0x26313b,roughness:.62,metalness:.72,envMapIntensity:.8});
  const smallFloorMat=new R.MeshStandardMaterial({color:0x171b21,roughness:.82,metalness:.28,envMapIntensity:.45});
  const smallGlowMat=new R.MeshStandardMaterial({color:0x19a8a8,emissive:0x087777,emissiveIntensity:2.2,roughness:.35,metalness:.45});
@@ -399,7 +441,7 @@ for(let i=0;i<36;i++){const x=(lc()-.5)*100*K,z=(lc()-.5)*100*K;if(Math.hypot(x,
   const p=new R.Points(g,m);scene.add(p);return p})();
 
 /* collisions cercle/AABB, retourne la hauteur du sol sous le point */
-function activeBoxes(){return mapIndex===3?smallMapBoxes:boxes}
+function activeBoxes(){return mapIndex===3?smallMapBoxes:(mapIndex===0?boxes:customMapBoxes[mapIndex])}
 function collide(p,r){let g=0;for(const b of activeBoxes()){if(!(p.x>b.x0-r&&p.x<b.x1+r&&p.z>b.z0-r&&p.z<b.z1+r))continue;
  if(p.y>=b.top-.35){g=Math.max(g,b.top);continue}
  const dx=Math.min(p.x-(b.x0-r),b.x1+r-p.x),dz=Math.min(p.z-(b.z0-r),b.z1+r-p.z);
@@ -1059,7 +1101,7 @@ function spawn(boss,blade){const g=new R.Group(),e={g,parts:[],legs:[],boss,blad
   add(eg.c,em.s,0,1.5,0,1);add(eg.h,em.s,0,1.68,0,1);add(eg.helm,em.vest,0,1.8,.02);add(eg.vis,em.p,0,1.7,-.19);
   e.visor=e.parts[e.parts.length-1];e.visor.material=new R.MeshStandardMaterial({color:0x200505,emissive:boss?0xff2a12:blade?0xff9500:0xff3a1a,emissiveIntensity:boss?2.4:blade?2:1.4,roughness:.2,metalness:.6});
   if(boss){g.scale.setScalar(2.4);e.parts.forEach(p=>{if(p.material.emissive&&!p.material.emissive.getHex()){p.material.emissive.setHex(0x220505);p.material.emissiveIntensity=1}})}
-  for(let i=0;i<12;i++){const a=rnd()*6.28,r=mapIndex===3?(14+rnd()*5):(40+rnd()*15)*1.3,lim=mapIndex===3?20:B-4;g.position.set(Math.max(-lim,Math.min(lim,Math.cos(a)*r)),0,Math.max(-lim,Math.min(lim,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>(mapIndex===3?12:28))break}
+  for(let i=0;i<12;i++){const a=rnd()*6.28,r=mapIndex===3?(8+rnd()*5):([40,27,75,10,24,55,18,68][mapIndex]+rnd()*8),lim=[59,39,112,20,46,84,32,104][mapIndex]-4;g.position.set(Math.max(-lim,Math.min(lim,Math.cos(a)*r)),0,Math.max(-lim,Math.min(lim,Math.sin(a)*r)));collide(g.position,.6);if(g.position.distanceTo(P.pos)>(mapIndex===3?12:28))break}
   scene.add(g);enemies.push(e);if(boss)sfx.roar();else if(blade)killfeed('⚠ ASSAUT AU COUTEAU !','#ff9b2a')}
 function flashEnemy(e){if(e.fl>0)return;for(const p of e.parts)p.material.emissive.setHex(0xffffff)}
 function updEnemyFlash(e,dt){
@@ -1151,7 +1193,7 @@ function callStrike(){if((P.sh||0)>T||strikes<=0)return;strikes--;banner('FRAPPE
 function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.position,nx=p.x+u.v.x*dt,nz=p.z+u.v.z*dt;u.v.y-=20*dt;p.addScaledVector(u.v,dt);
  const g=collide(p,.15);if(Math.abs(p.x-nx)>1e-4)u.v.x*=-.5;if(Math.abs(p.z-nz)>1e-4)u.v.z*=-.5;
  if(p.y<=g+.12){p.y=g+.12;if(u.v.y<0)u.v.y*=-.4;if(Math.abs(u.v.y)<.5)u.v.y=0;u.v.x*=.85;u.v.z*=.85}
- const lim=mapIndex===3?20:59;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
+ const lim=[59,39,112,20,46,84,32,104][mapIndex];p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
  if((u.f-=dt)<=0){m.visible=false;explode(p,8,160)}});
  for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200);air.splice(i,1)}}}
 /* ================= HUD ================= */
@@ -1318,7 +1360,7 @@ function mkRemote(name){const g=new R.Group(),parts=[];
  const sp=new R.Sprite(new R.SpriteMaterial({map:new R.CanvasTexture(c),depthTest:true,depthWrite:false,fog:false}));sp.scale.set(2,.5,1);sp.position.y=2.2;g.add(sp);scene.add(g);return{g,parts,name,sc:0}}
 const nameOf=id=>id===myId?myName:(remote.get(id)||{}).name||'Joueur';
 function board(){const a=[[myName,P.score]];remote.forEach(r=>a.push([r.name,r.sc]));return a.sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]+' '+x[1]).join(' | ')}
-function respawnPos(){const lim=mapIndex===3?18:B-10,bs=activeBoxes();for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*2*lim,0,(rnd()-.5)*2*lim);if(bs.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
+function respawnPos(){const lim=[90,60,105,18,45,82,31,100][mapIndex],bs=activeBoxes();for(let i=0;i<30;i++){P.pos.set((rnd()-.5)*2*lim,0,(rnd()-.5)*2*lim);if(bs.every(b=>!(P.pos.x>b.x0-.8&&P.pos.x<b.x1+.8&&P.pos.z>b.z0-.8&&P.pos.z<b.z1+.8)))break}P.vel.set(0,0,0)}
 const shEl=(()=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;pointer-events:none;display:none;z-index:5;box-shadow:inset 0 0 140px 40px rgba(70,170,255,.6);border:3px solid rgba(120,200,255,.5)';document.body.appendChild(d);return d})();
 function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presence({m:mp?1:0});if(!mp)remote.forEach(r=>r.g.visible=false)}catch(e){console.error(e)}}
 function mpTick(dt){const seen=new Set(),peers=room.peers();
