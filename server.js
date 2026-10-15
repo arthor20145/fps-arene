@@ -49,7 +49,7 @@ wss.on('connection', (ws) => {
       c.lastPresence = now;
       c.presence = m.presence;
       broadcast({ type: 'presence', peer: id, presence: m.presence }, id);
-    } else if (m.type === 'emit' && typeof m.name === 'string' && ['hit', 'kill', 'shot'].includes(m.name)) {
+    } else if (m.type === 'emit' && typeof m.name === 'string' && ['hit', 'kill', 'shot', 'rocket'].includes(m.name)) {
       broadcast({ type: 'event', name: m.name, peer: id, data: m.data });
     }
   });
