@@ -1327,12 +1327,16 @@ const ADS_BACK=[-.22,0,0,0,0,0,0];
  const WANT_PX=0;
  const worldPerPx=(2*Math.tan(cam.fov*Math.PI/360)*Math.abs(pivot.position.z||.35))/innerHeight;
  const ad={x:ad0.x,y:ad0.y+adjY+WANT_PX*worldPerPx,z:ad0.z+adjZ+ADS_BACK[cur]};
- const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT),hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sprintA*.07+WANT_PX*worldPerPx,hipZ=-.35+kick*.06;
+ /* course / marche : l'arme suit le cycle de pas (bobT) — balancement latéral, rebond vertical, arme baissée et tournée vers la gauche en sprint */
+ const runK=P.ground?Math.min(1.6,hs/5.5):0,sbx=Math.sin(bobT),sby=Math.abs(Math.sin(bobT));
+ const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT)+sbx*.012*runK*(1-adsT)-sprintA*.07+sbx*.03*sprintA*runK,
+  hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sby*.014*runK*(1-adsT)-sprintA*.10-sby*.035*sprintA*runK+WANT_PX*worldPerPx,
+  hipZ=-.35+kick*.06+sprintA*.04;
  pivot.position.set(hipX*(1-adsT)+ad.x*adsT,hipY*(1-adsT)+ad.y*adsT,hipZ*(1-adsT)+ad.z*adsT);
  /* en visée optique on fige le balancement pour que l'image reste nette */
  const steady=scOn&&adsT>.5?1:.45;
- pivot.rotation.set(kick*.05+(reload>0?-.75*Math.sin(Math.PI*(1-reload/(W[cur].rl*P.reloadMul))):0)+(swap>0?swap:0)+sprintA*.85-Math.abs(Math.sin(bobT/2))*.02*(1-adsT),
-   -swayX*.055*(1-adsT*steady)+sprintA*.35,(-swayY*.045*(1-adsT*steady))*1+sprintA*.25);
+ pivot.rotation.set(kick*.05+(reload>0?-.75*Math.sin(Math.PI*(1-reload/(W[cur].rl*P.reloadMul))):0)+(swap>0?swap:0)+sprintA*.30+sby*.06*sprintA*runK-Math.abs(Math.sin(bobT/2))*.02*(1-adsT),
+   -swayX*.055*(1-adsT*steady)+sprintA*.55,(-swayY*.045*(1-adsT*steady))*1+sprintA*.30+sbx*.06*sprintA*runK);
   if(cur==4&&guns[4].userData.spin)guns[4].userData.spin.rotation.z+=dt*(held?40:6);
  if(guns[6].userData.wh)guns[6].userData.wh.visible=A[6].ammo>0;
  fl.visible=flashT>0;fll.intensity=flashT>0?3.2:0;flashT-=dt;swap=Math.max(0,swap-dt);
