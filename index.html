@@ -1054,12 +1054,12 @@ function tryShoot(){if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=
    });
    if(mp){let bp=null,bd=3.0;remote.forEach((r,id)=>{if(!r.g.visible)return;const dx=r.g.position.x-P.pos.x,dz=r.g.position.z-P.pos.z,dist=Math.hypot(dx,dz);
      if(dist>3.0||Math.abs(r.g.position.y-P.pos.y)>1.6)return;const dot=(dx*forward.x+dz*forward.z)/(dist||1);if(dot<.45)return;if(dist<bd){bp=id;bd=dist}});
-     if(bp){room.emit('hit',{t:bp,d:Math.round(dm),hs:0});hitMark(false);const rp=remote.get(bp).g.position;bloodFx(new R.Vector3(rp.x,1.2,rp.z),v2.set(0,.3,-1),false)}}
+     if(bp){room.emit('hit',{t:bp,d:Math.round(dm),hs:0,w:cur,wn:wName(cur)});hitMark(false);const rp=remote.get(bp).g.position;bloodFx(new R.Vector3(rp.x,1.2,rp.z),v2.set(0,.3,-1),false)}}
     if(best){
       const hs=best.g.position.y+1.2>P.pos.y+1.4;
       best.hp-=dm*(hs?2:1);best.alert=5;best.fl=.12;flashEnemy(best);
       bloodFx(best.g.position,v2.set(0,.3,-1),hs);hitMark(hs);ringFx(best.g.position,new R.Vector3(0,1,0),hs?0xffd447:0xaa0000,1.6);
-      if(best.hp<=0)kill(best,hs);
+      if(best.hp<=0)kill(best,hs,wName(cur));
     }else{sfx.imp()}
   }else{
     const mv=P.vel.length()>1,ads=adsT>.5,sp=(w.spr*mulSpr(cur)*(mv?2:1)*(ads?.4:1)*(P.hh<1.4?.7:1))+heat+(cur==3&&!ads?.04:0);
@@ -1073,10 +1073,10 @@ function tryShoot(){if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=
       const end=h?h.point:v1.clone().addScaledVector(v2,90);
       tracer(mw,end,np>1?.55:1);
       if(h){const n=h.face?h.face.normal.clone().transformDirection(h.object.matrixWorld):new R.Vector3(0,1,0);
-        const pl=h.object.userData.pl;if(pl){const hs=h.object.userData.head;room.emit('hit',{t:pl,d:Math.round(dm*(hs?2:1)),hs:hs?1:0});bloodFx(h.point,v2,!!hs);hitMark(!!hs);continue}
+        const pl=h.object.userData.pl;if(pl){const hs=h.object.userData.head;room.emit('hit',{t:pl,d:Math.round(dm*(hs?2:1)),hs:hs?1:0,w:cur,wn:wName(cur)});bloodFx(h.point,v2,!!hs);hitMark(!!hs);continue}
         const e=h.object.userData.e;if(e){if(e.dead)continue;const hs=h.object.userData.head;e.hp-=dm*(hs?2:1);e.alert=5;e.fl=.12;flashEnemy(e);
           bloodFx(h.point,v2,hs);hitMark(hs);
-          if(e.hp<=0)kill(e,hs)}
+          if(e.hp<=0)kill(e,hs,wName(cur))}
         else{impactFx(h.point,n)}
       }
     }
@@ -1102,7 +1102,7 @@ function fireRpg(dm){
   /* le tube est collé à un mur : explosion immédiate */
   const dd=mw.clone().sub(eye),L=dd.length();ray.set(eye,dd.normalize());ray.far=L;
   const hh=ray.intersectObjects(bm,false)[0];
-  if(hh){explode(hh.point.clone(),7,dm,19,.12);return}
+  if(hh){explode(hh.point.clone(),7,dm,19,.12,'RPG-7');return}
   spawnRocket(mw,dir,dm,false)}
 function updRockets(dt){
   for(let i=rk.length-1;i>=0;i--){const r=rk[i],p=r.m.position;r.t+=dt;
@@ -1116,7 +1116,7 @@ function updRockets(dt){
       if(p.y<=.1||r.t>4||Math.abs(p.x)>62||Math.abs(p.z)>62)boom=p.clone().setY(Math.max(.1,p.y));
       else{spark(p,0xffaa44,1,.6,.12);spark(p,0x8a8a8a,1,.3,.16,-1.2)}}
     if(boom){scene.remove(r.m);rk.splice(i,1);
-      if(r.vis)fxBoom(boom);else{explode(boom,7,r.dm,19,.12);spark(boom,0xffdd88,20,16,.4);shake=Math.max(shake,.45)}}}}
+      if(r.vis)fxBoom(boom);else{explode(boom,7,r.dm,19,.12,'RPG-7');spark(boom,0xffdd88,20,16,.4);shake=Math.max(shake,.45)}}}}
 function hitMark(crit){const h=$('hm');h.style.opacity=1;h.style.color=crit?'#ffd447':'#fff';h.style.transform=`translate(-50%,-50%) scale(${crit?1.35:1.1})`;h.dataset.t=.25;
  if(crit)sfx.crit();else sfx.hit();}
 /* ================= ENNEMIS ================= */
@@ -1175,8 +1175,8 @@ function resetKillstreak(){P.streak=0;strikes=0;uav=0;rage=0;air.length=0}
 function registerKillstreak(){P.streak++;const sk=P.streak;/* KILLSTREAKS : x3 UAV, x5 frappe aérienne, x8 rage, puis frappe tous les 4 */
  if(sk===3){uav=25;banner('SÉRIE x3 — UAV',2.5,32)}else if(sk===5&&!(mp&&MODES[mpMode].noGear)){strikes++;banner('SÉRIE x5 — FRAPPE AÉRIENNE [F]',3,30)}
  else if(sk===8){rage=15;P.hp=P.maxHp;refill();banner('SÉRIE x8 — RAGE (dégâts x2)',3,30)}else if(sk>8&&sk%4===0&&!(mp&&MODES[mpMode].noGear)){strikes++;banner('SÉRIE x'+sk+' — FRAPPE AÉRIENNE [F]',3,30)}}
-function kill(e,hs){e.dead=T;P.score+=100+(hs?50:0);const earned=Math.round((e.boss?50:(W[cur].points||10))*DF.pts);P.points+=earned;banner(hs?'HEADSHOT +'+(earned+50):(e.boss?'+'+earned+' POINTS BOSS':'+'+earned+' POINTS'),.8,28);
- kfEntry({killer:'VOUS',weapon:(W[cur]&&W[cur].n)||'',victim:e.boss?'MASTODONTE':'ENNEMI',head:!!hs,me:true,color:hs?'#ffd447':'#7c4'});
+function kill(e,hs,wn){e.dead=T;P.score+=100+(hs?50:0);const earned=Math.round((e.boss?50:(W[cur].points||10))*DF.pts);P.points+=earned;banner(hs?'HEADSHOT +'+(earned+50):(e.boss?'+'+earned+' POINTS BOSS':'+'+earned+' POINTS'),.8,28);
+ kfEntry({killer:'VOUS',weapon:wn||wName(cur),victim:e.boss?'MASTODONTE':'ENNEMI',head:!!hs,me:true,color:hs?'#ffd447':'#7c4'});
  killFx(e.g.position);if(e.boss){shake=Math.max(shake,.7);sfx.boom();ringFx(v1.copy(e.g.position).setY(.2),new R.Vector3(0,1,0),0xff5522,7)}
  registerKillstreak();
  if(e.boss){const wi=[0,2,3,4,5][Math.min(bossDropIndex,4)];const colors=[0x4aa3ff,0xff8a33,0xcfd6ff,0x66ff66,0xffffff];const m=new R.Mesh(new R.BoxGeometry(.9,.3,.3),new R.MeshBasicMaterial({color:colors[Math.min(bossDropIndex,3)]}));m.position.set(e.g.position.x,.6,e.g.position.z);scene.add(m);picks.push({m,t:'w',w:wi,l:9999});P.score+=1000;resetShopStock();bossDropIndex=Math.min(bossDropIndex+1,5);banner('MASTODONTE ÉLIMINÉ — DROP : '+W[wi].n,4,34)}
@@ -1263,13 +1263,14 @@ function refill(){A[6].res+=1;A[0].res+=30;A[1].res+=12;A[2].res+=8;A[3].res+=5;
 function blastKb(p,r,kb){if(state!=='play')return;const c=new R.Vector3(P.pos.x,P.pos.y+.9,P.pos.z),dv=c.clone().sub(p),dd=dv.length();
  if(dd<r){const st=1-dd/r;dv.normalize();if(dv.y<.3)dv.y=.3;dv.normalize();P.vel.addScaledVector(dv,kb*st);if(dv.y>.2)P.ground=false}}
 function fxBoom(p){spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);spark(p,0x221a12,12,3,.7,2);sfx.boom();ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);shake=Math.max(shake,Math.max(0,1-p.distanceTo(cam.position)/40));blastKb(p,7,13)}
-function explode(p,r,dm,kb,selfMul){spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);spark(p,0x221a12,12,3,.7,2);sfx.boom();
+function explode(p,r,dm,kb,selfMul,wn){spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);spark(p,0x221a12,12,3,.7,2);sfx.boom();
+  const wUsed=wn||'GRENADE';
   ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);shake=Math.max(shake,Math.max(0,1-p.distanceTo(cam.position)/40));
   addDecal(v1.copy(p).setY(.05),new R.Vector3(0,1,0),'blood',2+rnd());
-  enemies.forEach(e=>{if(e.dead)return;const d=Math.hypot(e.g.position.x-p.x,e.g.position.z-p.z);if(d<r){e.hp-=dm*(1-d/r);e.alert=5;e.fl=.12;flashEnemy(e);if(e.hp<=0)kill(e,false)}});
+  enemies.forEach(e=>{if(e.dead)return;const d=Math.hypot(e.g.position.x-p.x,e.g.position.z-p.z);if(d<r){e.hp-=dm*(1-d/r);e.alert=5;e.fl=.12;flashEnemy(e);if(e.hp<=0)kill(e,false,wUsed)}});
   const d=p.distanceTo(cam.position);if(d<r)hurt(dm*(selfMul==null?.4:selfMul)*(1-d/r),p);
   if(kb)blastKb(p,r,kb);
-  if(mp)remote.forEach((q,id)=>{const dd=Math.hypot(q.g.position.x-p.x,q.g.position.z-p.z);if(dd<r)room.emit('hit',{t:id,d:Math.round(dm*.6*(1-dd/r))})})}
+  if(mp)remote.forEach((q,id)=>{const dd=Math.hypot(q.g.position.x-p.x,q.g.position.z-p.z);if(dd<r)room.emit('hit',{t:id,d:Math.round(dm*.6*(1-dd/r)),wn:wUsed})})}
 function throwG(){if(mp&&MODES[mpMode].noGear)return;if((P.sh||0)>T||gren<=0||T<gCool)return;const m=gr.find(x=>!x.visible);if(!m)return;gren--;gCool=T+.6;cam.getWorldPosition(m.position);
  v2.set(0,.25,-1).normalize().applyQuaternion(cam.quaternion);m.userData.v.copy(v2).multiplyScalar(17).add(P.vel);m.userData.f=2.5;m.visible=true}
 function callStrike(){if(mp&&MODES[mpMode].noGear)return;if((P.sh||0)>T||strikes<=0)return;strikes--;banner('FRAPPE AÉRIENNE',2);const dx=-Math.sin(P.yaw),dz=-Math.cos(P.yaw);
@@ -1278,8 +1279,8 @@ function updGren(dt){gr.forEach(m=>{if(!m.visible)return;const u=m.userData,p=m.
  const g=collide(p,.15);if(Math.abs(p.x-nx)>1e-4)u.v.x*=-.5;if(Math.abs(p.z-nz)>1e-4)u.v.z*=-.5;
  if(p.y<=g+.12){p.y=g+.12;if(u.v.y<0)u.v.y*=-.4;if(Math.abs(u.v.y)<.5)u.v.y=0;u.v.x*=.85;u.v.z*=.85}
  const lim=mapIndex===3?20:59;p.x=Math.max(-lim,Math.min(lim,p.x));p.z=Math.max(-lim,Math.min(lim,p.z));
- if((u.f-=dt)<=0){m.visible=false;explode(p,8,160)}});
- for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200);air.splice(i,1)}}}
+ if((u.f-=dt)<=0){m.visible=false;explode(p,8,160,0,null,'GRENADE')}});
+ for(let i=air.length-1;i>=0;i--){const a=air[i];if((a.t-=dt)<=0){explode(a.p,9,200,0,null,'GRENADE');air.splice(i,1)}}}
 /* ================= HUD ================= */
 let bnT=0,vig=0;const rc=$('radar').getContext('2d');
 function banner(t,d=2,s=44){const b=$('bn');b.textContent=t;b.style.fontSize=s+'px';b.style.opacity=1;bnT=d}
@@ -1447,7 +1448,11 @@ addEventListener('keyup',e=>k[e.code]=0);
 /* ================= MULTIJOUEUR EN LIGNE (capability "room" de la page publiée) =================
    Chaque joueur est autoritaire sur sa position (presence) ; le tireur envoie 'hit', la victime applique les dégâts
    et annonce 'kill'. Deathmatch : pas d'ennemis IA, respawn après 3 s. */
-let pubRoom=null,room=null,mp=false,myId=null,lastK=null;const remote=new Map();let myName='Joueur'+(100+Math.floor(rnd()*900));
+let pubRoom=null,room=null,mp=false,myId=null,lastK=null,lastKWn='',lastKH=0;const wByPeer={};
+const wName=i=>(i!=null&&W[i])?W[i].n:'';
+/* Le tueur est l'autorité de sa propre ligne : on affiche son arme actuelle.
+   Sinon on retombe sur le nom transmis par la victime (via hit/kill), puis sur le cache. */
+const killerWeapon=d=>{if(!d.k)return'';if(d.k===myId)return wName(cur);return d.wn||wByPeer[d.k]||''};const remote=new Map();let myName='Joueur'+(100+Math.floor(rnd()*900));
 function mkRemote(name){const g=new R.Group(),parts=[];
  const add=(ge,m,x,y,z,hd)=>{const me=new R.Mesh(ge,m);me.position.set(x,y,z);me.castShadow=true;me.userData={pl:null,head:hd};g.add(me);parts.push(me)};
  add(eg.l,em.d,0,.4,0);add(eg.t,em.p,0,1.1,0);add(eg.h,em.s,0,1.55,0,1);add(eg.c,em.p,0,1.68,0,1);add(eg.g,em.d,.3,1.15,-.3);
@@ -1480,13 +1485,16 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
    if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
  }else{if(!mpMapEndAt)resetMapTimer();mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000)}
  room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0});
- if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;room.emit('kill',{k:lastK,v:myId,w:cur});banner('ÉLIMINÉ',3,40);held=0}
- if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;if(owned[6])A[6].ammo=W[6].mag;refill();if(MODES[mpMode].noGear)gren=0;P.sh=T+2;banner('BOUCLIER · 2 s',2,30)}
+ if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;const kInf=lastK,kwInf=lastKWn,khInf=lastKH;room.emit('kill',{k:kInf,v:myId,wn:kwInf,hs:khInf});
+  kfEntry(kInf?{killer:nameOf(kInf),weapon:kwInf||'',victim:myName,head:!!khInf}:{txt:'☠ '+myName+' — SUICIDE',color:'#8a94a0'});
+  lastKH=0;
+  banner('ÉLIMINÉ',3,40);held=0}
+ if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;lastK=null;lastKWn='';for(const k in wByPeer)delete wByPeer[k];respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;if(owned[6])A[6].ammo=W[6].mag;refill();if(MODES[mpMode].noGear)gren=0;P.sh=T+2;banner('BOUCLIER · 2 s',2,30)}
  const shOn=(P.sh||0)>T;if(shEl)shEl.style.display=shOn?'block':'none'}
 async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.use('room')}catch(e){}if(!room)return;
  $('modeMp').disabled=false;$('modeMp').onclick=e=>{e.stopPropagation();wantMp=true;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on')};
- room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
- room.on('kill',m=>{const d=m.data;if(!mp||!d)return;kfEntry(d.k?{killer:nameOf(d.k),weapon:(d.w!=null&&W[d.w])?W[d.w].n:'',victim:nameOf(d.v),me:d.k===myId,color:d.k===myId?'#ffd447':'#7c4'}:{txt:'☠ '+nameOf(d.v)+' — SUICIDE',color:'#8a94a0'});if(d.k===myId&&d.v!==myId){P.score+=100;registerKillstreak();if(MODES[mpMode].gg)ggAdvance()}});
+ room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;lastKWn=m.data.wn||wName(m.data.w);wByPeer[m.peer]=lastKWn;if(m.data.hs)lastKH=1;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
+ room.on('kill',m=>{const d=m.data;if(!mp||!d)return;kfEntry(d.k?{killer:nameOf(d.k),weapon:killerWeapon(d),victim:nameOf(d.v),head:!!d.hs,me:d.k===myId,color:d.k===myId?'#ffd447':'#7c4'}:{txt:'☠ '+nameOf(d.v)+' — SUICIDE',color:'#8a94a0'});if(d.k===myId&&d.v!==myId){P.score+=100;registerKillstreak();if(MODES[mpMode].gg)ggAdvance()}});
  room.on('rocket',m=>{const d=m.data;if(!mp||m.isMe||!d||typeof d.x!=='number')return;spawnRocket(new R.Vector3(d.x,d.y,d.z),new R.Vector3(d.dx,d.dy,d.dz).normalize(),0,true)});
  room.on('shot',m=>{if(!mp||m.isMe)return;const rk0=m.data&&m.data.rk;if(rk0&&typeof rk0.x==='number')spawnRocket(new R.Vector3(rk0.x,rk0.y,rk0.z),new R.Vector3(rk0.dx,rk0.dy,rk0.dz).normalize(),0,true);const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12)});
  setInterval(()=>{$('mpn').textContent=pubRoom.peers().filter(p=>!p.isMe&&p.presence.m===1).length+' autre(s) joueur(s) en ligne'},1000)}
