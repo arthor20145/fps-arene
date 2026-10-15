@@ -1081,7 +1081,7 @@ const ray=new R.Raycaster(),v1=new R.Vector3(),v2=new R.Vector3(),enemies=[],pic
 function tryShoot(){if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cur];if(!w.knife&&a.ammo<=0){startReload();return}
  if(!w.knife)a.ammo--;nextShot=T+w.rate*mulRate(cur);fired=1;
  if(w.knife){sfx.imp();}else{sfx.shot(cur,hasSil(cur).loud);}
- if(mp&&!w.rpg)room.emit('shot',{w:cur});
+ if(mp&&!w.rpg){const so=new R.Vector3(),sd=new R.Vector3();cam.getWorldPosition(so);cam.getWorldDirection(sd);room.emit('shot',{w:cur,x:+so.x.toFixed(2),y:+so.y.toFixed(2),z:+so.z.toFixed(2),dx:+sd.x.toFixed(3),dy:+sd.y.toFixed(3),dz:+sd.z.toFixed(3)});}
   const dm=w.dmg*P.damageMul*mulDmg(cur)*(rage>0?2:1)*(cheats.oneShot?2:1);
  if(w.rpg){fireRpg(dm);startReload();}else if(w.knife){
    const forward=new R.Vector3(0,0,-1).applyQuaternion(cam.quaternion); forward.y=0; forward.normalize();
@@ -1550,7 +1550,7 @@ async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.u
  room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;lastKWn=m.data.wn||wName(m.data.w);wByPeer[m.peer]=lastKWn;if(m.data.hs)lastKH=1;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
  room.on('kill',m=>{const d=m.data;if(!mp||!d)return;kfEntry(d.k?{killer:nameOf(d.k),weapon:killerWeapon(d),victim:nameOf(d.v),head:!!d.hs,me:d.k===myId,color:d.k===myId?'#ffd447':'#7c4'}:{txt:'☠ '+nameOf(d.v)+' — SUICIDE',color:'#8a94a0'});if(d.k===myId&&d.v!==myId){P.score+=100;registerKillstreak();if(MODES[mpMode].gg)ggAdvance()}});
  room.on('rocket',m=>{const d=m.data;if(!mp||m.isMe||!d||typeof d.x!=='number')return;spawnRocket(new R.Vector3(d.x,d.y,d.z),new R.Vector3(d.dx,d.dy,d.dz).normalize(),0,true)});
- room.on('shot',m=>{if(!mp||m.isMe)return;const rk0=m.data&&m.data.rk;if(rk0&&typeof rk0.x==='number')spawnRocket(new R.Vector3(rk0.x,rk0.y,rk0.z),new R.Vector3(rk0.dx,rk0.dy,rk0.dz).normalize(),0,true);const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12)});
+ room.on('shot',m=>{if(!mp||m.isMe)return;const d=m.data||{},rk0=d.rk;if(rk0&&typeof rk0.x==='number')spawnRocket(new R.Vector3(rk0.x,rk0.y,rk0.z),new R.Vector3(rk0.dx,rk0.dy,rk0.dz).normalize(),0,true);const r=remote.get(m.peer);if(!r)return;const g=r.g.position;sfx.eshot(Math.hypot(g.x-P.pos.x,g.z-P.pos.z));spark(v1.set(g.x,1.3,g.z),0xffcc55,2,1,.12);if(!rk0&&typeof d.x==='number'&&typeof d.dx==='number'){const a=new R.Vector3(d.x,d.y,d.z),dir=new R.Vector3(d.dx,d.dy,d.dz).normalize(),b=a.clone().addScaledVector(dir,Math.min(65,Math.max(18,Math.hypot(g.x-P.pos.x,g.z-P.pos.z)+12)));tracer(a,b,.9)}});
  setInterval(()=>{$('mpn').textContent=pubRoom.peers().filter(p=>!p.isMe&&p.presence.m===1).length+' autre(s) joueur(s) en ligne'},1000)}
 /* Choix du pseudo (affiché seulement en mode En ligne, mémorisé dans le navigateur) */
 (function(){const inp=$('pname'),row=$('nameRow');if(!inp)return;
