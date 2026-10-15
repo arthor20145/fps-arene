@@ -1438,7 +1438,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  if(!isHost&&hostPresence&&MODES[hostPresence.md]&&hostPresence.md!==mpMode){mpMode=hostPresence.md;ggIdx=0;mpLoadout(mpMode);P.score=0;P.streak=0;banner('MODE : '+MODES[mpMode].n.toUpperCase(),3,34)}
  peers.forEach(p=>{if(p.isMe)return;const q=p.presence||{};if(q.m!==1||typeof q.x!=='number')return;seen.add(p.peer);
   let r=remote.get(p.peer);if(!r){r=mkRemote(String(q.n||'Joueur').slice(0,16));r.parts.forEach(m=>m.userData.pl=p.peer);remote.set(p.peer,r)}
-  const g=r.g.position,k2=Math.min(1,dt*12);r.sc=q.s|0;r.g.visible=q.a===1;g.x+=(q.x-g.x)*k2;g.y+=(q.y-g.y)*k2;g.z+=(q.z-g.z)*k2;r.g.rotation.y=+q.yaw||0;r.g.scale.y=q.c?.75:1});
+  const g=r.g.position,k2=Math.min(1,dt*12);r.sc=q.s|0;r.g.visible=q.a===1;g.x+=(q.x-g.x)*k2;g.y+=(q.y-g.y)*k2;g.z+=(q.z-g.z)*k2;r.g.rotation.y=+q.yaw||0;r.g.scale.y=q.c?.75:1;if(r._w!==q.w){r._w=q.w;const wm=r.g.children.find(ch=>ch.isMesh&&Math.abs(ch.position.x-.3)<.01&&Math.abs(ch.position.y-1.15)<.01);if(wm){const sc=[1,1.35,.9,1.6,.8,1.5,1.1][q.w]||1;wm.scale.set(sc,sc,sc);const col=['#888','#66aaff','#ff8844','#ccd6ff','#66ff66','#ffffff','#ffcc66'][q.w]||'#888';wm.material.color.set(col)}const sp=r.g.children.find(ch=>ch.isSprite);if(sp){const ctx=sp.material.map.image.getContext('2d');ctx.clearRect(0,0,256,64);ctx.font='bold 30px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.strokeStyle='#000';ctx.lineWidth=5;ctx.strokeText((r.name||'Joueur'),128,18);ctx.fillText((r.name||'Joueur'),128,18);ctx.font='bold 22px Arial';ctx.fillStyle='#ffcc66';const txt=(W[q.w]&&W[q.w].n)?W[q.w].n:'-';ctx.strokeText(txt,128,46);ctx.fillText(txt,128,46);sp.material.map.needsUpdate=true}}});
  remote.forEach((r,id)=>{if(!seen.has(id)){scene.remove(r.g);r.g.children.forEach(c=>c.material&&c.material.map&&c.material.map.dispose());remote.delete(id)}});
  if(isHost){
    if(!mpMapEndAt||mpMapIndex!==mapIndex)resetMapTimer();
@@ -1449,7 +1449,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
    mpMapEndAt=Date.now()+mapTime*1000;
    if(hostPresence.mi!==mapIndex){const next=hostPresence.mi;applyMap(next,true);enemies.forEach(e=>scene.remove(e.g));enemies.length=0;toSpawn=0;spT=0;wt=1e9;P.score=0;P.streak=0;P.points=0;wave=0;mpMapIndex=next}
  }else{if(!mpMapEndAt)resetMapTimer();mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000)}
- room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0});
+ room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:P.dead?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;room.emit('kill',{k:lastK,v:myId});banner('ÉLIMINÉ',3,40);held=0}
  if(P.dead&&T-P.dead>3){P.dead=0;P.hp=P.maxHp;P.last=T;respawnPos();if(owned[0])A[0].ammo=W[0].mag;if(owned[1])A[1].ammo=W[1].mag;if(owned[2])A[2].ammo=W[2].mag;if(owned[3])A[3].ammo=W[3].mag;if(owned[4])A[4].ammo=W[4].mag;if(owned[6])A[6].ammo=W[6].mag;refill();if(MODES[mpMode].noGear)gren=0;P.sh=T+2;banner('BOUCLIER · 2 s',2,30)}
  const shOn=(P.sh||0)>T;if(shEl)shEl.style.display=shOn?'block':'none'}
