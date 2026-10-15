@@ -72,8 +72,9 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 @keyframes hpPulse{50%{box-shadow:0 0 22px rgba(255,40,30,.9)}}
 #radar{border:2px solid rgba(255,255,255,.45);box-shadow:0 4px 18px rgba(0,0,0,.6),inset 0 0 20px rgba(0,0,0,.6)}
 #info{font-family:'Arial Black',Arial,sans-serif;letter-spacing:.5px}
-#stamw{position:absolute;left:28px;bottom:56px;width:260px;height:6px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25)}
-#stam{height:100%;width:100%;background:#6cc7ff;box-shadow:0 0 10px rgba(90,190,255,.8)}
+#stamw{position:absolute;left:28px;bottom:54px;width:260px;height:10px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.35);box-shadow:0 2px 10px rgba(0,0,0,.6);z-index:2}
+#stam{height:100%;width:100%;background:linear-gradient(#9fe0ff,#2f9bff);box-shadow:0 0 10px rgba(90,190,255,.8);transition:width .08s linear}
+#stamw.exh #stam{background:linear-gradient(#ffc27a,#d9661a);box-shadow:0 0 10px rgba(255,150,60,.8)}
 #kf{position:absolute;left:16px;top:150px;font-size:16px;line-height:1.45;text-shadow:0 2px 4px #000;pointer-events:none}
 #kf b{display:block;padding:2px 8px;margin-bottom:3px;background:rgba(0,0,0,.45);border-left:3px solid #7c4;animation:kfIn .22s ease-out}
 @keyframes kfIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
@@ -624,6 +625,7 @@ function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=M.gg?[GG[ggIdx]]:M.w;
  W.forEach((w,i)=>{A[i]=!owned[i]?{ammo:0,res:0}:w.knife?{ammo:1,res:0}:{ammo:w.mag,res:al?99:w.mag*4}});
  gren=M.noGear?0:5;strikes=0;hasMini=owned[4];equip(al?al[0]:0)}
 function ggAdvance(){if(ggIdx>=GG.length-1){P.score+=500;ggIdx=0;banner('GUN GAME TERMINÉ ! +500 · ON RECOMMENCE',4,36)}else{ggIdx++;banner('GUN GAME '+(ggIdx+1)+'/'+GG.length+' — '+W[GG[ggIdx]].n,2.5,32)}mpLoadout('gungame')}
+let sprExh=false;
 let wantMp=false;
 function setupMenu(){
   $('diffRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -1267,7 +1269,7 @@ function hud(dt,gap){
   const b2=$('banner2');if(+b2.style.opacity>0){b2.dataset.t-=dt;if(b2.dataset.t<.5)b2.style.opacity=Math.max(0,+b2.dataset.t*2)}
   $('hpw').classList.toggle('low',P.hp<35);
   $('hp').style.width=Math.max(0,Math.min(100,P.hp/P.maxHp*100))+'%';
-  $('stam').style.width=Math.max(0,Math.min(100,stam))*'%';
+  $('stam').style.width=(Math.max(0,Math.min(1,stam))*100)+'%';$('stamw').classList.toggle('exh',sprExh);
   $('am').textContent=A[cur].ammo+' / '+A[cur].res;$('wn').textContent=W[cur].n+(reload>0?' — RECHARGEMENT':'')+(adsT>.8?' — VISÉE':'')+(mp&&MODES[mpMode].noGear?'':'  |  Grenades: '+gren);
   $('scope').style.display=cur==3&&adsT>.85?'block':'none';pivot.visible=!(cur==3&&adsT>.85);
   $('ks').textContent='Série x'+P.streak+(uav>0?' · UAV '+Math.ceil(uav)+'s':'')+(rage>0?' · RAGE '+Math.ceil(rage)+'s':'')+(strikes?' · [F] Frappe x'+strikes:'');
@@ -1293,8 +1295,9 @@ function update(dt){
   }
   if(mp){mpTick(dt);if(P.dead)return}
  const f=(k.KeyW?1:0)-(k.KeyS?1:0),s=(k.KeyD?1:0)-(k.KeyA?1:0),crouch=k.ControlLeft||k.KeyC,ads=adsHeld;
- const sprint=k.ShiftLeft&&f>0&&!crouch&&!ads&&stam>.05,spd=(crouch?2.6:sprint?9:5.5)*(ads?.6:1)*(cur==4?.7:1)*P.speedMul;
+ const sprint=k.ShiftLeft&&f>0&&!crouch&&!ads&&!sprExh,spd=(crouch?2.6:sprint?9:5.5)*(ads?.6:1)*(cur==4?.7:1)*P.speedMul;
   stam=Math.max(0,Math.min(1,stam+(sprint?-dt*.28:dt*.22)));
+  if(stam<=.02)sprExh=true;else if(stam>.3)sprExh=false; /* il faut récupérer un peu d'endurance avant de resprinter */
  let dx=-Math.sin(P.yaw)*f+Math.cos(P.yaw)*s,dz=-Math.cos(P.yaw)*f-Math.sin(P.yaw)*s;const l=Math.hypot(dx,dz);if(l>0){dx/=l;dz/=l}
  const ac=Math.min(1,dt*(P.ground?10:2));P.vel.x+=(dx*spd-P.vel.x)*ac;P.vel.z+=(dz*spd-P.vel.z)*ac;
  if(k.Space&&P.ground){P.vel.y=8;P.ground=false}P.vel.y-=25*dt;
@@ -1328,15 +1331,15 @@ const ADS_BACK=[-.22,0,0,0,0,0,0];
  const worldPerPx=(2*Math.tan(cam.fov*Math.PI/360)*Math.abs(pivot.position.z||.35))/innerHeight;
  const ad={x:ad0.x,y:ad0.y+adjY+WANT_PX*worldPerPx,z:ad0.z+adjZ+ADS_BACK[cur]};
  /* course / marche : l'arme suit le cycle de pas (bobT) — balancement latéral, rebond vertical, arme baissée et tournée vers la gauche en sprint */
- const runK=P.ground?Math.min(1.6,hs/5.5):0,sbx=Math.sin(bobT),sby=Math.abs(Math.sin(bobT));
- const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT)+sbx*.012*runK*(1-adsT)-sprintA*.07+sbx*.03*sprintA*runK,
-  hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sby*.014*runK*(1-adsT)-sprintA*.10-sby*.035*sprintA*runK+WANT_PX*worldPerPx,
+ const runK=P.ground?Math.min(1.6,hs/5.5):0,sbx=Math.sin(bobT),sby=Math.sin(bobT)*Math.sin(bobT); /* rebond lissé (pas de cassure à chaque pas) */
+ const hipX=.22*(1-adsT)+Math.sin(bobT/2)*.014*(1-adsT)+sbx*.012*runK*(1-adsT)+sprintA*.05+sbx*.02*sprintA*runK,
+  hipY=-.24-Math.abs(Math.cos(bobT/2))*.012*(1-adsT)-sby*.014*runK*(1-adsT)-sprintA*.12-sby*.025*sprintA*runK+WANT_PX*worldPerPx,
   hipZ=-.35+kick*.06+sprintA*.04;
  pivot.position.set(hipX*(1-adsT)+ad.x*adsT,hipY*(1-adsT)+ad.y*adsT,hipZ*(1-adsT)+ad.z*adsT);
  /* en visée optique on fige le balancement pour que l'image reste nette */
  const steady=scOn&&adsT>.5?1:.45;
- pivot.rotation.set(kick*.05+(reload>0?-.75*Math.sin(Math.PI*(1-reload/(W[cur].rl*P.reloadMul))):0)+(swap>0?swap:0)+sprintA*.30+sby*.06*sprintA*runK-Math.abs(Math.sin(bobT/2))*.02*(1-adsT),
-   -swayX*.055*(1-adsT*steady)+sprintA*.55,(-swayY*.045*(1-adsT*steady))*1+sprintA*.30+sbx*.06*sprintA*runK);
+ pivot.rotation.set(kick*.05+(reload>0?-.75*Math.sin(Math.PI*(1-reload/(W[cur].rl*P.reloadMul))):0)+(swap>0?swap:0)-sprintA*.45+sby*.05*sprintA*runK-Math.abs(Math.sin(bobT/2))*.02*(1-adsT),
+   -swayX*.055*(1-adsT*steady)+sprintA*.10,(-swayY*.045*(1-adsT*steady))*1+sprintA*.25+sbx*.04*sprintA*runK);
   if(cur==4&&guns[4].userData.spin)guns[4].userData.spin.rotation.z+=dt*(held?40:6);
  if(guns[6].userData.wh)guns[6].userData.wh.visible=A[6].ammo>0;
  fl.visible=flashT>0;fll.intensity=flashT>0?3.2:0;flashT-=dt;swap=Math.max(0,swap-dt);
