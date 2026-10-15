@@ -210,8 +210,9 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 <div class="ov" id="shop"><div id="shopPanel"><h1>🛒 SHOP</h1><div id="shopPoints">Points : 0</div><div class="shopGrid" id="shopGrid"></div><button id="shopClose">Fermer (B / Échap)</button></div></div>
 <div class="ov" id="armory"><div id="armoryPanel"><h1>🔧 ARMURERIE</h1><div id="armPoints">Points : 0</div>
  <div class="mgroup"><span class="mtitle">Arme</span><div class="armWeapons" id="armWeapons"></div>
-  <p style="font-size:12px;opacity:.6;margin:8px 2px 0">Clique sur le ★ d'une arme pour la définir comme arme de départ.</p>
-  <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button></div>
+  <p style="font-size:12px;opacity:.6;margin:8px 2px 0">Tu portes 2 armes à feu (principale + secondaire) en plus du couteau. Clique sur le ★ pour définir l'arme principale.</p>
+  <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button>
+  <button id="armSetSecond" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme secondaire</button></div>
  <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
  <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
  <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
@@ -511,7 +512,7 @@ let cheatMsg='',cheatMsgT=0;
 function cheatToast(m){cheatMsg=m;cheatMsgT=2.5;updateCheatUI()}
 function liveGame(){return state==='play'||state==='pause'||state==='shop'}
 function cheatGrant(points){P.points+=points;if(points>0){banner('+'+points+' POINTS (cheat)',2,30)}updateCheatUI()}
-function cheatUnlockAll(){owned=owned.map(()=>true);hasMini=true;for(let i=0;i<W.length;i++)if(owned[i]){A[i].ammo=W[i].mag;A[i].res=W[i].knife?0:W[i].mag*6}gren=5;banner('TOUTES LES ARMES DÉBLOQUÉES',2.5,30);sfx.hit();updateCheatUI()}
+function cheatUnlockAll(){owned=owned.map(()=>true);carry=W.map((w,i)=>i).filter(i=>!W[i].knife);hasMini=true;for(let i=0;i<W.length;i++)if(owned[i]){A[i].ammo=W[i].mag;A[i].res=W[i].knife?0:W[i].mag*6}gren=5;banner('TOUTES LES ARMES DÉBLOQUÉES',2.5,30);sfx.hit();updateCheatUI()}
 function cheatMaxHp(){P.maxHp+=50;P.hp=P.maxHp;banner('PV MAX +50 (cheat)',2,30);sfx.hit();updateCheatUI()}
 function cheatKillWave(){let n=0;enemies.forEach(e=>{if(!e.dead){kill(e,false);n++}});toSpawn=0;wt=.35;banner(n?'VAGUE '+wave+' SAUTÉE ('+n+' ennemis)':'VAGUE '+wave+' SAUTÉE',2.5,32);updateCheatUI()}
 function cheatSkipWaves(n){for(let i=0;i<n;i++){enemies.forEach(e=>{if(!e.dead)kill(e,false)});toSpawn=0;wave+=1;resetShopStock()}wt=.35;banner('AVANCÉ DE '+n+' VAGUE(S) → VAGUE '+wave,2.5,32);updateCheatUI()}
@@ -605,7 +606,7 @@ function setupSettings(){
 
 /* ================= MENU DE LANCEMENT ================= */
 const CONTROLS=[['Z / W / S / A','Se déplacer'],['Souris','Viser'],['Clic gauche','Tirer'],['Clic droit','Viser (ADS)'],
- ['Maj','Sprinter'],['Espace','Sauter'],['Ctrl','S’accroupir'],['R','Recharger'],['1 – 5','Changer d’arme'],['6','Couteau'],['7','RPG-7'],
+ ['Maj','Sprinter'],['Espace','Sauter'],['Ctrl','S’accroupir'],['R','Recharger'],['1 / 2','Arme principale / secondaire'],['6','Couteau'],['7','RPG-7'],['8','AK-47'],['9','UZI'],['Q / Molette','Changer d’arme portée'],
  ['G','Grenade'],['F','Frappe aérienne'],['B','Shop'],['F1','Panneau de cheats'],['Échap','Pause']];
 /* ===== MODES EN LIGNE ===== */
 const MODES={
@@ -625,7 +626,8 @@ function randomMode(ex){const k=Object.keys(MODES).filter(x=>x!==ex);return k[Ma
 function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=M.gg?[GG[ggIdx]]:M.w;
  owned=W.map((w,i)=>!al||al.includes(i));
  W.forEach((w,i)=>{A[i]=!owned[i]?{ammo:0,res:0}:w.knife?{ammo:1,res:0}:{ammo:w.mag,res:al?99:w.mag*4}});
- gren=M.noGear?0:5;strikes=0;hasMini=owned[4];equip(al?al[0]:0)}
+ carry=al?al.filter(i=>!W[i].knife):normLoadout();
+ gren=M.noGear?0:5;strikes=0;hasMini=owned[4];equip(al?al[0]:carry[0])}
 function ggAdvance(){if(ggIdx>=GG.length-1){P.score+=500;ggIdx=0;banner('GUN GAME TERMINÉ ! +500 · ON RECOMMENCE',4,36)}else{ggIdx++;banner('GUN GAME '+(ggIdx+1)+'/'+GG.length+' — '+W[GG[ggIdx]].n,2.5,32)}mpLoadout('gungame')}
 let sprExh=false;
 let wantMp=false;
@@ -760,12 +762,16 @@ const W=[
  {n:'AWP',mag:5,dmg:120,rate:1.3,auto:0,rec:.1,spr:.002,rl:2.4,points:28},
  {n:'MINIGUN',mag:200,dmg:14,rate:.05,auto:1,rec:.006,spr:.03,rl:3.5,points:35},
  {n:'COUTEAU',mag:1,dmg:180,rate:.65,auto:0,rec:.03,spr:0,rl:.8,points:45,knife:1},
- {n:'RPG-7',mag:1,dmg:350,rate:1.2,auto:0,rec:.06,spr:.004,rl:2.6,points:40,rpg:1}
+ {n:'RPG-7',mag:1,dmg:350,rate:1.2,auto:0,rec:.06,spr:.004,rl:2.6,points:40,rpg:1},
+ {n:'AK-47',mag:35,dmg:50,rate:.1,auto:1,rec:.008,spr:.01,rl:1.9,points:22},
+ {n:'UZI',mag:40,dmg:24,rate:.07,auto:1,rec:.004,spr:.012,rl:1.3,points:15}
 ];
-const A=[{ammo:30,res:120},{ammo:12,res:75},{ammo:6,res:24},{ammo:5,res:15},{ammo:0,res:0},{ammo:1,res:0},{ammo:1,res:4}];
+const A=[{ammo:30,res:120},{ammo:12,res:75},{ammo:6,res:24},{ammo:5,res:15},{ammo:0,res:0},{ammo:1,res:0},{ammo:1,res:4},{ammo:35,res:140},{ammo:40,res:160}];
 let cur=0,reload=0,swap=0,nextShot=0,heat=0,kick=0,flashT=0,held=0,fired=0,adsHeld=0,adsT=0,bobT=0,lastStep=0,T=0;
  let hasMini=false,gren=3,strikes=0,uav=0,rage=0,shake=0,gCool=0,stam=1,sprintA=0,swayX=0,swayY=0;
-let owned=[true,true,true,true,true,true,true],bossDropIndex=0;
+let owned=[true,true,true,true,true,true,true,true,true],bossDropIndex=0;
+/* CHARGEUR : on ne porte que 2 armes à feu + le couteau (toujours disponible) */
+let carry=[1,2];const keyOf=i=>[2,1,3,4,5,6,7,8,9][i];
 const SHOP_MAX={hp:3,ammo:99,reload:3,damage:3,speed:3};
 const SHOP_GROWTH=1.03; /* chaque achat ajoute 3% du prix précédent */
 const SHOP_CFG={
@@ -789,12 +795,17 @@ function buyShop(id){if(state!=='shop'||shopStock[id]<=0)return;const price=shop
 function updateShopUI(){const pts=$('shopPoints');if(!pts)return;pts.textContent='Points : '+P.points;const g=$('shopGrid');g.innerHTML='';Object.keys(SHOP_CFG).forEach(id=>{const c=SHOP_CFG[id],left=shopStock[id],price=shopPrice(id);const d=document.createElement('div');d.className='shopItem';d.innerHTML='<h3>'+c.label+'</h3><p>'+c.desc+'</p><p>Prix : <b>'+price+'</b> points · Stock : '+left+'/'+SHOP_MAX[id]+'</p>';const b=document.createElement('button');b.textContent=left<=0?'ÉPUISÉ':'Acheter';b.disabled=left<=0||P.points<price;b.onclick=()=>buyShop(id);d.appendChild(b);g.appendChild(d)})}
 /* ================= SAUVEGARDE PERSISTANTE (armurerie) ================= */
 const SAVE_KEY='fps-arene-v1';
-let save={bank:0,own:[true,true,false,false,false,true],start:1,arm:{}};
+let save={bank:0,own:[true,true,false,false,false,true],start:1,second:2,arm:{}};
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(s&&s.own&&s.arm)save=Object.assign(save,s)}catch(e){}
 if(typeof save.start!=='number'||save.start<0||save.start>=W.length)save.start=1;
+if(typeof save.second!=='number'||save.second<0||save.second>=W.length||save.second===save.start)save.second=1;
 if(!Array.isArray(save.own)||save.own.length!==W.length)save.own=[true,true,true,false,false,true];
 save.own=W.map(()=>true); /* toutes les armes sont débloquées dans l'armurerie */
 if(!save.bought)save.bought={};
+/* chargeur = [arme principale, arme secondaire] : 2 armes à feu différentes (le couteau est toujours porté en plus) */
+function normLoadout(){const l=[save.start,save.second].filter((v,i,a)=>typeof v==='number'&&v>=0&&v<W.length&&!W[v].knife&&a.indexOf(v)===i);
+ for(const d of [1,0,2,3,7,8,4,6]){if(l.length>=2)break;if(!l.includes(d))l.push(d)}return l.slice(0,2)}
+function setLoadout(kind,i){if(kind==='start'){if(i===save.second)save.second=save.start;save.start=i}else{if(W[i].knife)return;if(i===save.start)save.start=save.second;save.second=i}saveGame()}
 function saveGame(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
 /* ================= ARMURERIE (viseurs / silencieux) ================= */
 let armSel=1;
@@ -810,11 +821,11 @@ function updateArmoryUI(){
  const wg=$('armWeapons');wg.innerHTML='';
  W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
   const isStart=i===save.start;
-  const st=document.createElement('small');st.textContent=!save.own[i]?'🔒 verrouillée':(isStart?'★ arme de départ':'départ ?');
+  const st=document.createElement('small');st.textContent=!save.own[i]?'🔒 verrouillée':(W[i].knife?'toujours portée':isStart?'★ arme principale':i===save.second?'☆ arme secondaire':'non portée');
   const mark=document.createElement('span');mark.textContent='★';mark.title=isStart?'Arme de départ actuelle':'Définir comme arme de départ';
   /* l'étoile reste visible sur TOUTE arme débloquée, sinon on ne peut jamais en changer */
   mark.style.cssText='cursor:pointer;font-size:16px;line-height:1;color:'+(isStart?'#ffd65a':'#6d7f8c');
-  mark.onclick=e=>{e.stopPropagation();if(!save.own[i])return;save.start=i;saveGame();updateArmoryUI()};
+  mark.onclick=e=>{e.stopPropagation();if(!save.own[i])return;setLoadout('start',i);updateArmoryUI()};
   b.appendChild(mark);b.appendChild(document.createTextNode(w.n));b.appendChild(st);
   b.onclick=()=>{armSel=i;updateArmoryUI()};wg.appendChild(b)});
  const mk=(host,list,cfg,cur,kind)=>{const g=$(host);g.innerHTML='';
@@ -853,7 +864,9 @@ $('armStats').innerHTML=rows.map(r=>'<div class="armStatRow"><span>'+r[0]+'</spa
    +'<br>Silencieux : '+si.n+' — '+SIL_DESC[ARM[armSel].sil]+'</p>';
  const sb=$('armSetStart');sb.textContent=armSel===save.start?'★ Arme de départ sélectionnée':'Définir comme arme de départ';
   sb.disabled=!save.own[armSel];
-  sb.onclick=()=>{save.start=armSel;saveGame();$('armMsg').textContent='✔ Tu commenceras la prochaine partie avec '+W[armSel].n+'.';updateArmoryUI()};
+  sb.onclick=()=>{setLoadout('start',armSel);$('armMsg').textContent='✔ Arme principale : '+W[armSel].n+' (chargeur : '+normLoadout().map(k=>W[k].n).join(' + ')+' + couteau).';updateArmoryUI()};
+ const sb2=$('armSetSecond');sb2.textContent=armSel===save.second?'☆ Arme secondaire sélectionnée':'Définir comme arme secondaire';sb2.disabled=!save.own[armSel]||!!W[armSel].knife;
+ sb2.onclick=()=>{setLoadout('second',armSel);$('armMsg').textContent='✔ Arme secondaire : '+W[armSel].n+' (chargeur : '+normLoadout().map(k=>W[k].n).join(' + ')+' + couteau).';updateArmoryUI()};
 }
 const GM={poly:new R.MeshStandardMaterial({color:0x23281f,roughness:.72,metalness:.25,envMapIntensity:.5}),
  black:new R.MeshStandardMaterial({color:0x111316,roughness:.45,metalness:.8,envMapIntensity:.7}),
@@ -868,11 +881,11 @@ function gc(g,r1,r2,h,m,x,y,z,rx,seg){const b=new R.Mesh(new R.CylinderGeometry(
 function hands(g,fz,tz){gp(g,.075,.085,.1,GM.skin,0,-.075,fz,.3,0,0);gp(g,.075,.08,.095,GM.glove,0,-.095,tz,-.35,0,0);
  gp(g,.09,.075,.26,GM.skin,.05,-.2,tz+.22,-1.2,0,-.18);gp(g,.09,.075,.26,GM.skin,-.035,-.185,fz-.03,-1.3,0,.14);
  gp(g,.11,.07,.14,GM.glove,0,-.045,tz+.02)}
-const guns=[new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group()];
+const guns=[new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group(),new R.Group()];
 /* Position de la bouche du canon (pour le flash et les traçantes).
    Aligné sur la longueur réelle de chaque arme :
    M4A1 canon -.87 · M9 -.30 · SPAS-12 -1.18 · AWP -1.68 · MINIGUN -.99 · Couteau -.62 */
-const pivot=new R.Group(),tip=[[0,.014,-.87],[0,.012,-.30],[0,.020,-1.18],[0,.020,-1.68],[0,.020,-.99],[0,.020,-.62],[0,0,-.66]];
+const pivot=new R.Group(),tip=[[0,.014,-.87],[0,.012,-.30],[0,.020,-1.18],[0,.020,-1.68],[0,.020,-.99],[0,.020,-.62],[0,0,-.66],[0,.020,-.95],[0,.015,-.55]];
 (function buildM4(){const g=guns[0];
  gp(g,.075,.085,.46,GM.poly,0,0,-.16);gp(g,.07,.075,.2,GM.black,0,-.075,-.05);gp(g,.062,.058,.3,GM.poly,0,.005,-.45);
  for(let i=0;i<5;i++)gp(g,.07,.014,.022,GM.black,0,.042,-.33-i*.055);
@@ -933,11 +946,49 @@ const pivot=new R.Group(),tip=[[0,.014,-.87],[0,.012,-.30],[0,.020,-1.18],[0,.02
  gp(g,.03,.04,.14,GM.black,-.06,.045,-.05);gc(g,.018,.018,.02,GM.glass,-.06,.045,-.13,Math.PI/2,10);
  gp(g,.025,.03,.012,GM.black,0,.055,.08);gp(g,.01,.03,.01,GM.black,0,.055,-.55);gp(g,.008,.008,.008,GM.glow,0,.072,-.55);
  hands(g,-.22,.05)})();
+(function buildAk(){const g=guns[7];
+ /* boîtier de culasse + couvercle */
+ gp(g,.07,.08,.46,GM.black,0,0,-.09);gp(g,.06,.018,.4,GM.steel,0,.049,-.09);
+ gp(g,.05,.065,.06,GM.black,0,.012,.15);
+ /* garde-main en bois (bas + haut) + tube de gaz */
+ gp(g,.068,.06,.27,GM.wood,0,-.012,-.46);gp(g,.058,.03,.25,GM.wood,0,.04,-.46);
+ gc(g,.016,.016,.28,GM.steel,0,.066,-.56,Math.PI/2,10);gp(g,.03,.05,.04,GM.black,0,.04,-.78);
+ /* canon + frein de bouche */
+ gc(g,.012,.012,.55,GM.steel,0,.02,-.68,Math.PI/2);gc(g,.02,.02,.06,GM.black,0,.02,-.93,Math.PI/2);
+ /* guidon (base + plot) et hausse */
+ gp(g,.022,.05,.03,GM.black,0,.04,-.88);gp(g,.008,.026,.008,GM.black,0,.08,-.88);gp(g,.007,.007,.007,GM.glow,0,.095,-.88);
+ gp(g,.03,.022,.05,GM.black,0,.07,-.22);gp(g,.02,.014,.012,GM.black,0,.084,-.235);
+ /* chargeur courbé (2 segments) */
+ gp(g,.05,.16,.075,GM.steel,0,-.15,-.2,.25);gp(g,.05,.14,.075,GM.steel,0,-.285,-.26,.6);
+ for(let i=0;i<3;i++)gp(g,.052,.006,.077,GM.black,0,-.12-i*.04,-.2-i*.012,.25);
+ /* poignée, pontet, détente, levier de sûreté, levier d'armement */
+ gp(g,.045,.13,.07,GM.wood,0,-.145,.07,-.32);gp(g,.012,.03,.1,GM.black,0,-.07,-.05);gp(g,.01,.03,.012,GM.steel,0,-.062,-.03);
+ gp(g,.074,.01,.2,GM.steel,0,.0,-.06);gp(g,.02,.02,.045,GM.steel,.045,.025,-.13);
+ /* crosse en bois + plaque de couche */
+ gp(g,.05,.1,.24,GM.wood,0,-.03,.27,-.1);gp(g,.056,.115,.02,GM.black,0,-.045,.395,-.1);
+ hands(g,-.46,.07)})();
+(function buildUzi(){const g=guns[8];
+ /* boîtier + couvercle + culasse arrière */
+ gp(g,.065,.075,.4,GM.black,0,0,-.1);gp(g,.055,.02,.38,GM.poly,0,.045,-.1);gp(g,.05,.07,.03,GM.black,0,.005,.115);
+ for(let i=0;i<6;i++)gp(g,.067,.008,.012,GM.steel,0,.0,-.2+i*.045);
+ /* manchon de canon + canon + écrou de bouche */
+ gc(g,.026,.026,.16,GM.black,0,.015,-.38,Math.PI/2,12);gc(g,.012,.012,.12,GM.steel,0,.015,-.5,Math.PI/2);gc(g,.02,.02,.025,GM.black,0,.015,-.545,Math.PI/2);
+ /* garde de guidon + hausse + levier d'armement */
+ gp(g,.03,.035,.012,GM.black,0,.045,-.3);gp(g,.007,.014,.007,GM.glow,0,.056,-.3);
+ gp(g,.03,.02,.04,GM.black,0,.064,.02);gp(g,.03,.015,.04,GM.black,0,.06,-.13);
+ /* poignée-chargeur */
+ gp(g,.05,.12,.08,GM.poly,0,-.095,-.02,-.12);gp(g,.04,.17,.06,GM.steel,0,-.235,-.032,-.12);
+ gp(g,.042,.012,.062,GM.black,0,-.325,-.045,-.12);
+ /* pontet + détente */
+ gp(g,.012,.03,.09,GM.black,0,-.06,-.12);gp(g,.01,.03,.012,GM.steel,0,-.062,-.075);
+ /* crosse filaire repliée */
+ gp(g,.012,.012,.3,GM.steel,.036,-.02,-.08);gp(g,.012,.012,.3,GM.steel,-.036,-.02,-.08);gp(g,.07,.012,.012,GM.steel,0,-.02,.07);
+ hands(g,-.28,.0)})();
 /* position de visée : reculée pour que la crosse reste devant la caméra */
-const ADS_CFG=[{x:0,y:-.062,z:-.80},{x:0,y:-.05,z:-.52},{x:0,y:-.06,z:-.64},{x:0,y:-.115,z:-.92},{x:.13,y:-.14,z:-.95},{x:0,y:-.02,z:-.52},{x:0,y:-.068,z:-.62}];
+const ADS_CFG=[{x:0,y:-.062,z:-.80},{x:0,y:-.05,z:-.52},{x:0,y:-.06,z:-.64},{x:0,y:-.115,z:-.92},{x:.13,y:-.14,z:-.95},{x:0,y:-.02,z:-.52},{x:0,y:-.068,z:-.62},{x:0,y:-.072,z:-.82},{x:0,y:-.064,z:-.58}];
 ADS_CFG.forEach((a,i)=>{W[i].ads=a;W[i].az=i===3?58:i===4?16:25});
 /* ---- géométrie des accessoires (visée + silencieux) par arme ---- */
-const MUZ=[{y:.014,z:-.87,r:.023},{y:.012,z:-.30,r:.018},{y:.02,z:-1.18,r:.035},{y:.02,z:-1.68,r:.03},{y:.02,z:-.99,r:.05},{y:.02,z:-.62,r:.02},{y:0,z:-.66,r:.05}];
+const MUZ=[{y:.014,z:-.87,r:.023},{y:.012,z:-.30,r:.018},{y:.02,z:-1.18,r:.035},{y:.02,z:-1.68,r:.03},{y:.02,z:-.99,r:.05},{y:.02,z:-.62,r:.02},{y:0,z:-.66,r:.05},{y:.02,z:-.95,r:.022},{y:.015,z:-.55,r:.02}];
 /* Hauteur de visée propre à chaque arme : mesurée sur le modèle 3D (grain / lunette).
    SIGHT[i].y  = hauteur de la ligne de visée (pour centrer l'arme en ADS)
    SIGHT[i].z  = position en profondeur du viseur (0 = pas de viseur, ex. couteau) */
@@ -948,14 +999,16 @@ const SIGHT=[
  {y:.105,z:-.30},  /* AWP     : lunette haute                    */
  {y:.090,z:-.05},  /* MINIGUN : bloc de visée relevé            */
  {y:0,   z:0},
- {y:.062,z:.02}]; /* RPG-7 : hausse + lunette optionnelle */    /* COUTEAU : pas de visée                   */
+ {y:.062,z:.02},  /* RPG-7 */
+ {y:.075,z:-.22}, /* AK-47 : hausse + guidon */
+ {y:.064,z:.02}]; /* UZI : hausse */ /* RPG-7 : hausse + lunette optionnelle */    /* COUTEAU : pas de visée                   */
 const silMat=new R.MeshStandardMaterial({color:0x14171a,roughness:.55,metalness:.7,envMapIntensity:.7});
 /* verre très clair : on voit nettement à travers, léger reflet bleuté */
 const lensMat=new R.MeshBasicMaterial({color:0xbfe4ff,transparent:true,opacity:.07,depthWrite:false,side:R.DoubleSide});
 const scopeTubeMat=new R.MeshStandardMaterial({color:0x111316,roughness:.45,metalness:.8,envMapIntensity:.7,side:R.DoubleSide});
 const dotMat=new R.MeshBasicMaterial({color:0xff3b30,depthWrite:false});
 const attScope=[],attSil=[];
-for(let i=0;i<7;i++){
+for(let i=0;i<9;i++){
   /* --- viseur : tube creux + lentille transparente + réticule --- */
   const s=new R.Group();const sz=SIGHT[i];
   if(i!==5){
@@ -986,7 +1039,7 @@ for(let i=0;i<7;i++){
   }
   b.visible=false;guns[i].add(b);attSil[i]=b;
 }
-function refreshAtt(){for(let i=0;i<7;i++){attScope[i].visible=scopeOn(i);attSil[i].visible=ARM[i].sil!=='none'}}
+function refreshAtt(){for(let i=0;i<9;i++){attScope[i].visible=scopeOn(i);attSil[i].visible=ARM[i].sil!=='none'}}
 /* ================= ARMURERIE : VISEURS & SILENCIEUX =================
    Chaque arme peut porter 1 viseur et 1 silencieux (indépendants).
    Les effets sont réellement appliqués au tir : recul, dispersion, dégâts, cadence, zoom. */
@@ -1018,7 +1071,7 @@ const flashTex=(()=>{const c=document.createElement('canvas');c.width=c.height=1
 const fl=new R.Sprite(new R.SpriteMaterial({map:flashTex,blending:R.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));
 fl.visible=false;fl.scale.set(.42,.42,1);const fll=new R.PointLight(0xffaa55,0,16);fll.position.set(0,0,-.6);cam.add(fll);
 let smokeT=0,puffT=0;
-cam.add(pivot);function equip(i){if(!owned[i])return;pivot.remove(guns[cur]);cur=i;pivot.add(guns[cur]);guns[cur].add(fl);fl.position.set(...tip[cur]);reload=0;swap=.3}
+cam.add(pivot);function equip(i){if(!owned[i])return;if(!W[i].knife&&!carry.includes(i)){if(state==='play')banner('ARME NON PORTÉE — chargeur : '+carry.map(k=>W[k].n).join(' + ')+' + COUTEAU',1.6,24);return}pivot.remove(guns[cur]);cur=i;pivot.add(guns[cur]);guns[cur].add(fl);fl.position.set(...tip[cur]);reload=0;swap=.3}
 equip(1);swap=0;
 function muzzleFx(){flashT=.055;fll.intensity=2.4;fl.material.rotation=rnd()*6.28;fl.scale.setScalar(.34+rnd()*.22);
  pivot.updateMatrixWorld(true);const wp=new R.Vector3();fl.getWorldPosition(wp);spark(wp,0xffcc77,2,1.4,.05);smokeT=.22;puffT=0;
@@ -1226,8 +1279,14 @@ function enemyFlash(p){const m=eflashes.find(x=>!x.visible);if(!m)return;m.visib
 for(let i=0;i<8;i++){const m=new R.Sprite(new R.SpriteMaterial({map:flashTex,blending:R.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));m.visible=false;m.userData={l:0};scene.add(m);eflashes.push(m)}
 /* ===== KILLFEED ===== */
 const KF_MAX=6,KF_LIFE=5200,KF_FADE=400;
+const _kfSeen=new Set();
+function _kfKey(o){return (o.killer||'')+'|'+(o.victim||'')+'|'+(o.weapon||'')+'|'+(o.head?'H':'')+'|'+(o.txt||'')+'|'+(o.me?'M':'')+'|'+(o.color||'')}
 function kfEntry(o){
  o=o||{};const k=$('kf');if(!k)return;
+ const key=_kfKey(o);
+ if(_kfSeen.has(key))return;          // évite le doublon
+ _kfSeen.add(key);
+ if(_kfSeen.size>80)_kfSeen.clear();
  const d=document.createElement('div');
  d.className='kfe'+(o.me?' me':'')+(o.head?' hv':'');
  if(o.color)d.style.borderLeftColor=o.color;
@@ -1291,7 +1350,7 @@ function hud(dt,gap){
   $('hpw').classList.toggle('low',P.hp<35);
   $('hp').style.width=Math.max(0,Math.min(100,P.hp/P.maxHp*100))+'%';
   $('stam').style.width=(Math.max(0,Math.min(1,stam))*100)+'%';$('stamw').classList.toggle('exh',sprExh);
-  $('am').textContent=A[cur].ammo+' / '+A[cur].res;$('wn').textContent=W[cur].n+(reload>0?' — RECHARGEMENT':'')+(adsT>.8?' — VISÉE':'')+(mp&&MODES[mpMode].noGear?'':'  |  Grenades: '+gren);
+  $('am').textContent=A[cur].ammo+' / '+A[cur].res;$('wn').textContent=W[cur].n+(reload>0?' — RECHARGEMENT':'')+(adsT>.8?' — VISÉE':'')+(mp&&MODES[mpMode].noGear?'':'  |  Grenades: '+gren)+(carry.length>1?'  |  '+carry.map(i=>(i===cur?'▶ ':'')+W[i].n).join(' · '):'');
   $('scope').style.display=cur==3&&adsT>.85?'block':'none';pivot.visible=!(cur==3&&adsT>.85);
   $('ks').textContent='Série x'+P.streak+(uav>0?' · UAV '+Math.ceil(uav)+'s':'')+(rage>0?' · RAGE '+Math.ceil(rage)+'s':'')+(strikes?' · [F] Frappe x'+strikes:'');
  const bo=enemies.find(e=>e.boss&&!e.dead);$('bb').style.display=bo?'block':'none';if(bo)$('bbf').style.width=Math.max(0,Math.min(100,bo.hp/18))+'%';
@@ -1340,10 +1399,10 @@ function update(dt){
    ADS_EXTRA[i] : réglage manuel supplémentaire par arme (0 = pas d'ajustement). */
 /* Ajustement vertical manuel par arme, en unités monde (négatif = viseur plus bas).
    0 = M4A1, 1 = M9, 2 = SPAS-12, 3 = AWP, 4 = MINIGUN, 5 = Couteau */
-const ADS_EXTRA=[-.075,0,0,0,0,0,0];
+const ADS_EXTRA=[-.075,0,0,0,0,0,0,0,0];
 /* Recul supplémentaire en visée, par arme : éloigne le modèle de l'œil pour
    dégager la ligne de visée (le M4A1 est long et masquait l'écran). */
-const ADS_BACK=[-.22,0,0,0,0,0,0];
+const ADS_BACK=[-.22,0,0,0,0,0,0,-.1,0];
  const scOn=scopeOn(cur),sz=SIGHT[cur];
  const ad0=W[cur].ads||{x:0,y:-.06,z:-.34};
  const adjY=(scOn?-sz.y:0)+ADS_EXTRA[cur],adjZ=scOn?Math.min(-.10,sz.z*.55):0;
@@ -1372,7 +1431,7 @@ const ADS_BACK=[-.22,0,0,0,0,0,0];
  /* ennemis, ramassages, particules, vagues */
  enemies.forEach(e=>updEnemy(e,dt));for(let i=enemies.length-1;i>=0;i--)if(enemies[i].rm)enemies.splice(i,1);
  for(let i=picks.length-1;i>=0;i--){const q=picks[i];q.m.rotation.y+=dt*2;q.l-=dt;
-  if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;owned[wi]=true;save.own[wi]=true;saveGame();if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+([2,3,4,5,6][Math.max(0,[0,2,3,4,5].indexOf(wi))]||6),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
+  if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;let oldW=-1;if(!W[wi].knife&&!carry.includes(wi)){if(carry.length<2)carry.push(wi);else{const ci=carry.indexOf(cur),k=ci>=0?ci:1;oldW=carry[k];carry[k]=wi}}owned[wi]=true;save.own[wi]=true;saveGame();if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+keyOf(wi)+(oldW>=0?' (remplace '+W[oldW].n+')':''),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
   if(q.l<=0||Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){scene.remove(q.m);picks.splice(i,1)}}
  updParts(dt);updFX(dt);updGren(dt);updRockets(dt);const alive=enemies.filter(e=>!e.dead).length;
   // Deathmatch : aucune vague ni aucun bot, même après un changement de map.
@@ -1402,7 +1461,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
 function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.forEach(q=>scene.remove(q.m));picks.length=0;
  mapIndex=0;applyMap(0,false);resetMapTimer();Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;P.sh=mp?T+2:0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};A[6]={ammo:0,res:0};rk.forEach(r=>scene.remove(r.m));rk.length=0;
  /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
- owned=save.own.slice();owned[save.start]=true;owned[0]=true;owned[1]=true;owned[5]=true;
+ carry=normLoadout();owned=save.own.slice();owned[save.start]=true;owned[0]=true;owned[1]=true;owned[5]=true;
  if(mp){owned=owned.map(()=>true);cheats.god=cheats.infiniteAmmo=cheats.oneShot=false;cheatUnlocked=false;konamiPos=0;$('cheat').style.display='none'}
  W.forEach((w,i)=>{if(owned[i]&&!w.knife)A[i]={ammo:w.mag,res:w.mag*4}});
  A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=mp?5:3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
@@ -1417,6 +1476,7 @@ const lock=()=>{audio();renderer.domElement.requestPointerLock()};
 $('again').onclick=e=>{e.stopPropagation();newGame();lock()};$('shopClose').onclick=shopClose;setupSettings();setupMenu();
 document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement){if(state!=='over'){state='play';['menu','pause','settings','shop','cheat'].forEach(i=>$(i).style.display='none');$('hud').style.display='block'}}
  else if(state==='play'){state='pause';$('pause').style.display='flex';held=0;adsHeld=0}});
+addEventListener('wheel',e=>{if(state!=='play')return;const l=carry.filter(i=>owned[i]).concat(owned[5]&&!carry.includes(5)?[5]:[]);if(l.length<2)return;const j=l.indexOf(cur);equip(l[(j+(e.deltaY>0?1:-1)+l.length)%l.length])},{passive:true});
 addEventListener('mousemove',e=>{if(state==='play'){const ss=.0022*settings.sensitivity*(1-(cur==3?.8:.4)*adsT);P.yaw-=e.movementX*ss;P.pitch-=e.movementY*ss;
   swayX=Math.max(-1,Math.min(1,swayX+e.movementX*.012));swayY=Math.max(-1,Math.min(1,swayY+e.movementY*.012))}});
 addEventListener('mousedown',e=>{if(state!=='play')return;if(e.button==0)held=1;if(e.button==2)adsHeld=1});
@@ -1429,9 +1489,13 @@ addEventListener('keydown',e=>{k[e.code]=1;
  if(state==='play'&&e.code==='KeyB'){e.preventDefault();shopOpen();return}
  if(state!=='play')return;
  if(e.code=='KeyR')startReload();
+ if(e.code==='Digit1'&&carry[0]!=null&&owned[carry[0]]&&carry[0]!==cur)equip(carry[0]);
+ if(e.code==='Digit2'&&carry[1]!=null&&owned[carry[1]]&&carry[1]!==cur)equip(carry[1]);
  if(e.code==='Digit6'&&owned[5]&&5!==cur)equip(5);
  if(e.code==='Digit7'&&owned[6]&&6!==cur)equip(6);
-  if(e.code.startsWith('Digit')){const key=+e.code.slice(5);const map=[1,0,2,3,4];const n=map[key-1];if(n!=null&&owned[n]&&n!=cur)equip(n)}
+ if(e.code==='Digit8'&&owned[7]&&7!==cur)equip(7);
+ if(e.code==='Digit9'&&owned[8]&&8!==cur)equip(8);
+ if(e.code==='KeyQ'&&state==='play'){const o=carry.find(i=>i!==cur&&owned[i]);if(o!=null)equip(o)}
  if(e.code=='KeyG')throwG();if(e.code=='KeyF')callStrike();
  if(['Space','ControlLeft'].includes(e.code))e.preventDefault()});
 addEventListener('keyup',e=>k[e.code]=0);
