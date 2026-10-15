@@ -616,6 +616,8 @@ const MODES={
 };
 const GG=[1,2,0,4,3,6,5]; /* M9 → SPAS-12 → M4A1 → MINIGUN → AWP → RPG-7 → COUTEAU */
 let mpMode='dm',ggIdx=0,mpAuto=true; /* mpAuto : le mode change au hasard à chaque rotation de map (toutes les 5 min) */
+/* identifiant numérique d'un joueur (p9 < p10) : le plus ancien connecté = le plus petit numéro = hôte */
+const peerNum=x=>parseInt(String(x.peer).replace(/\D/g,''),10)||0;
 function randomMode(ex){const k=Object.keys(MODES).filter(x=>x!==ex);return k[Math.floor(Math.random()*k.length)]}
 function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=M.gg?[GG[ggIdx]]:M.w;
  owned=W.map((w,i)=>!al||al.includes(i));
@@ -1376,7 +1378,11 @@ function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.
  if(mp){owned=owned.map(()=>true);cheats.god=cheats.infiniteAmmo=cheats.oneShot=false;cheatUnlocked=false;konamiPos=0;$('cheat').style.display='none'}
  W.forEach((w,i)=>{if(owned[i]&&!w.knife)A[i]={ammo:w.mag,res:w.mag*4}});
  A[5]={ammo:1,res:0};bossDropIndex=0;hasMini=owned[4];gren=mp?5:3;strikes=0;uav=0;rage=0;shake=0;P.streak=0;air.length=0;gr.forEach(m=>m.visible=false);resetShopProgress();
-  if(mp){ggIdx=0;if(mpAuto)mpMode=randomMode();mpLoadout(mpMode)}else equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
+  if(mp){ggIdx=0;
+  /* si une partie est déjà en cours, on rejoint DIRECTEMENT le mode de l'hôte (sans tirage au sort) */
+  const hp=room?room.peers().filter(q=>!q.isMe&&q.presence&&q.presence.m===1&&MODES[q.presence.md]).sort((a,b)=>peerNum(a)-peerNum(b))[0]:null;
+  if(hp){mpMode=hp.presence.md;if(hp.presence.au!=null)mpAuto=!!hp.presence.au}else if(mpAuto)mpMode=randomMode();
+  mpLoadout(mpMode)}else equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
   FXQ.tracers.concat(FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);$('kf').innerHTML='';$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
   ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
@@ -1418,7 +1424,7 @@ function syncMp(){try{if(!mp&&shEl)shEl.style.display='none';if(room)room.presen
 function mpTick(dt){const seen=new Set(),peers=room.peers();
  // Un seul joueur maître le timer : l'actif avec l'identifiant le plus petit.
  peers.forEach(p=>{if(p.isMe)myId=p.peer});
- const active=peers.filter(p=>p.isMe||(p.presence&&p.presence.m===1)).sort((a,b)=>String(a.peer).localeCompare(String(b.peer)));
+ const active=peers.filter(p=>p.isMe||(p.presence&&p.presence.m===1)).sort((a,b)=>peerNum(a)-peerNum(b));
  const host=active[0]||peers.find(p=>p.isMe);mpHostId=host?host.peer:null;const isHost=!!host&&host.isMe;
  const hostPresence=host&&host.presence?host.presence:null;
  if(!isHost&&hostPresence&&hostPresence.au!=null)mpAuto=!!hostPresence.au;
