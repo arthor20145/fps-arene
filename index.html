@@ -1145,20 +1145,10 @@ function tryShoot(){if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=
     const mv=P.vel.length()>1,ads=adsT>.5,sp=(w.spr*mulSpr(cur)*(mv?2:1)*(ads?.4:1)*(P.hh<1.4?.7:1))+heat+(cur==3&&!ads?.04:0);
     muzzleFx();ejectShell();
     cam.getWorldPosition(v1);const mw=new R.Vector3();fl.getWorldPosition(mw);
-    const tg=bm.slice();enemies.forEach(e=>{if(!e.dead)tg.push(...e.parts)});if(mp)remote.forEach(r=>{if(r.g.visible)tg.push(...r.parts)});const np=w.pel||1;
+    const np=w.pel||1;
     for(let pi2=0;pi2<np;pi2++){
       v2.set((rnd()-.5)*2*sp,(rnd()-.5)*2*sp,-1).normalize().applyQuaternion(cam.quaternion);
-      ray.set(v1,v2);ray.far=150;
-      const h=ray.intersectObjects(tg,false)[0];
-      const end=h?h.point:v1.clone().addScaledVector(v2,90);
-      tracer(mw,end,np>1?.55:1);
-      if(h){const n=h.face?h.face.normal.clone().transformDirection(h.object.matrixWorld):new R.Vector3(0,1,0);
-        const pl=h.object.userData.pl;if(pl){const hs=h.object.userData.head;room.emit('hit',{t:pl,d:Math.round(dm*(hs?2:1)),hs:hs?1:0,w:cur,wn:wName(cur)});bloodFx(h.point,v2,!!hs);hitMark(!!hs);continue}
-        const e=h.object.userData.e;if(e){if(e.dead)continue;const hs=h.object.userData.head;e.hp-=dm*(hs?2:1);e.alert=5;e.fl=.12;flashEnemy(e);
-          bloodFx(h.point,v2,hs);hitMark(hs);
-          if(e.hp<=0)kill(e,hs,wName(cur))}
-        else{impactFx(h.point,n)}
-      }
+      spawnBullet(v1,mw,v2,dm,cur,np>1); /* balle physique : elle voyage, la collision est testée à chaque image */
     }
     P.pitch+=w.rec*mulRec(cur)*(ads?.6:1);P.yaw+=(rnd()-.5)*w.rec*mulRec(cur)*.6;heat=Math.min(.05,heat+w.rec*mulRec(cur)*.25);
   }
@@ -1241,6 +1231,35 @@ function fireRpg(dm){
   const hit2=(()=>{ray.set(eye,dir);ray.far=2.2;return ray.intersectObjects(tg0,false)[0]})();
   if(hit2){explode(hit2.point.clone(),7,dm,19,.12,'RPG-7');return}
   spawnRocket(mw,dir,dm,false)}
+/* ================= BALLES PHYSIQUES (plus de tir instantané) ================= */
+const BSPD=110; /* vitesse des balles (unités/s), identique à celle des traînées des autres joueurs */
+FXQ.bul=[];let bI=0;
+for(let i=0;i<64;i++){const m=new R.Mesh(rtGeo,rtMat.clone());m.visible=false;m.frustumCulled=false;m.userData={};scene.add(m);FXQ.bul.push(m)}
+function spawnBullet(eye,mw,dir,dm,wi,pel){let m=FXQ.bul.find(x=>!x.visible);if(!m)m=FXQ.bul[bI=(bI+1)%FXQ.bul.length];
+ const u=m.userData;u.p=eye.clone();u.d=dir.clone();u.dm=dm;u.wi=wi;u.tr=0;u.off=mw.clone().sub(eye);u.len=pel?2.5:4;
+ m.quaternion.setFromUnitVectors(upv,dir);m.material.opacity=pel?.6:1;m.position.copy(mw);m.scale.set(1,.01,1);m.visible=true}
+function bulletHit(h,dir,dm,wi){
+ const n=h.face?h.face.normal.clone().transformDirection(h.object.matrixWorld):new R.Vector3(0,1,0);
+ const pl=h.object.userData.pl;
+ if(pl){const hs=h.object.userData.head;room.emit('hit',{t:pl,d:Math.round(dm*(hs?2:1)),hs:hs?1:0,w:wi,wn:wName(wi)});bloodFx(h.point,dir,!!hs);hitMark(!!hs);return}
+ const e=h.object.userData.e;
+ if(e){if(e.dead)return;const hs=h.object.userData.head;e.hp-=dm*(hs?2:1);e.alert=5;e.fl=.12;flashEnemy(e);
+  bloodFx(h.point,dir,hs);hitMark(hs);if(e.hp<=0)kill(e,hs,wName(wi))}
+ else{impactFx(h.point,n)}}
+function updBullets(dt){
+ let any=false;for(const m of FXQ.bul){if(m.visible){any=true;break}}if(!any)return;
+ dt=Math.min(dt,.05);
+ const tg=bm.slice();enemies.forEach(e=>{if(!e.dead)tg.push(...e.parts)});if(mp)remote.forEach(r=>{if(r.g.visible)tg.push(...r.parts)});
+ const st=BSPD*dt;
+ for(const m of FXQ.bul){if(!m.visible)continue;const u=m.userData;
+  ray.set(u.p,u.d);ray.far=st;
+  const h=ray.intersectObjects(tg,false)[0];
+  if(h){m.visible=false;bulletHit(h,u.d,u.dm,u.wi);continue}
+  u.p.addScaledVector(u.d,st);u.tr+=st;
+  if(u.tr>150){m.visible=false;continue}
+  /* visuel : la traînée part du canon puis rejoint l'axe de visée */
+  const k=1-Math.min(1,u.tr/12),L=Math.min(u.len,u.tr+.5);
+  m.position.copy(u.p).addScaledVector(u.off,k).addScaledVector(u.d,-L);m.scale.set(1,L,1)}}
 function updRockets(dt){
   for(let i=rk.length-1;i>=0;i--){const r=rk[i],p=r.m.position;r.t+=dt;
     const stp=Math.min(75,32+r.t*55)*dt;
@@ -1528,7 +1547,7 @@ const ADS_BACK=[-.22,0,0,0,0,0,0,-.1,0,0];
  for(let i=picks.length-1;i>=0;i--){const q=picks[i];q.m.rotation.y+=dt*2;q.l-=dt;
   if(Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){if(q.t=='w'){const wi=q.w;let oldW=-1;if(!W[wi].knife&&!carry.includes(wi)){if(carry.length<2)carry.push(wi);else{const ci=carry.indexOf(cur),k=ci>=0?ci:1;oldW=carry[k];carry[k]=wi}}owned[wi]=true;save.own[wi]=true;saveGame();if(wi===4)hasMini=true;A[wi]={ammo:W[wi].mag,res:W[wi].knife?0:W[wi].mag*4};equip(wi);banner(W[wi].n+' OBTENU — touche '+keyOf(wi)+(oldW>=0?' (remplace '+W[oldW].n+')':''),3,32)}else if(q.t=='a')refill();else P.hp=Math.min(P.maxHp,P.hp+40);sfx.hit()}
   if(q.l<=0||Math.hypot(q.m.position.x-P.pos.x,q.m.position.z-P.pos.z)<1.4){scene.remove(q.m);picks.splice(i,1)}}
- updParts(dt);updFX(dt);updGren(dt);updRockets(dt);updFlames(dt);updBurn(dt);const alive=enemies.filter(e=>!e.dead).length;
+ updParts(dt);updFX(dt);updGren(dt);updRockets(dt);updBullets(dt);updFlames(dt);updBurn(dt);const alive=enemies.filter(e=>!e.dead).length;
   // Deathmatch : aucune vague ni aucun bot, même après un changement de map.
   if(!mp){
     if(wt>0){wt-=dt;if(wt<=0)startWave()}
@@ -1565,7 +1584,7 @@ function newGame(){enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.
   const hp=room?room.peers().filter(q=>!q.isMe&&q.presence&&q.presence.m===1&&MODES[q.presence.md]).sort((a,b)=>peerNum(a)-peerNum(b))[0]:null;
   if(hp){mpMode=hp.presence.md;if(hp.presence.au!=null)mpAuto=!!hp.presence.au}else if(mpAuto)mpMode=randomMode();
   mpLoadout(mpMode)}else equip(save.start);refreshAtt();swap=0;wave=0;toSpawn=0;wt=mp?1e9:1.5;state='menu';held=0;adsHeld=0;stam=1;sprintA=0;swayX=0;swayY=0;
-  FXQ.tracers.concat(FXQ.rtracers,FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);kfClear();$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
+  FXQ.tracers.concat(FXQ.rtracers,FXQ.bul,FXQ.shells,FXQ.rings,FXQ.decals,FXQ.dnums,eflashes,pp).forEach(m=>m.visible=false);kfClear();$('hitm').style.opacity=0;$('hurtfx').style.opacity=0;
   ['menu','pause','over','shop','cheat'].forEach(i=>$(i).style.display='none');syncMp()}
 const lock=()=>{audio();renderer.domElement.requestPointerLock()};
 $('again').onclick=e=>{e.stopPropagation();newGame();lock()};$('shopClose').onclick=shopClose;setupSettings();setupMenu();
