@@ -625,7 +625,9 @@ let mpMode='dm',ggIdx=0,mpAuto=true; /* mpAuto : le mode change au hasard à cha
 /* identifiant numérique d'un joueur (p9 < p10) : le plus ancien connecté = le plus petit numéro = hôte */
 const peerNum=x=>parseInt(String(x.peer).replace(/\D/g,''),10)||0;
 function randomMode(ex){const k=Object.keys(MODES).filter(x=>x!==ex);return k[Math.floor(Math.random()*k.length)]}
-function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=M.gg?[GG[ggIdx]]:M.w;
+let mpBossLive=false;const bossLive=()=>{const e=bossEnt();return mp&&!!e&&!e.dying&&!e.dead};
+/* Quand un boss est en vie, les modes à arme imposée sont suspendus : chacun a ses 2 armes choisies. */
+function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=bossLive()?null:(M.gg?[GG[ggIdx]]:M.w);
  owned=W.map((w,i)=>!al||al.includes(i));
  W.forEach((w,i)=>{A[i]=!owned[i]?{ammo:0,res:0}:w.knife?{ammo:1,res:0}:{ammo:w.mag,res:al?99:w.mag*4}});
  carry=al?al.filter(i=>!W[i].knife):normLoadout();
@@ -1115,7 +1117,7 @@ function muzzleFx(){flashT=.055;fll.intensity=2.4;fl.material.rotation=rnd()*6.2
  if(cur==2||cur==3||cur==4||cur==6)$('flashfx').style.opacity=.10}
 function startReload(){const w=W[cur],a=A[cur];if(w.knife||reload>0||a.ammo>=w.mag||a.res<=0)return;reload=w.rl*P.reloadMul;sfx.reload()}
 const ray=new R.Raycaster(),v1=new R.Vector3(),v2=new R.Vector3(),enemies=[],picks=[];
-function tryShoot(){if(bossCtl)return;if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cur];if(!w.knife&&a.ammo<=0){startReload();return}
+function tryShoot(){if(bossCtl){const be=bossEnt();if(be&&!be.dying&&!(be.atk>0)&&be.ph!==2)bossAtk(be);return}if((P.sh||0)>T||reload>0||swap>0||T<nextShot)return;const w=W[cur],a=A[cur];if(!w.knife&&a.ammo<=0){startReload();return}
  if(!w.knife)a.ammo--;nextShot=T+w.rate*mulRate(cur);fired=1;
  if(w.knife){sfx.imp();}else if(w.flame){sfx.flame();}else{sfx.shot(cur,hasSil(cur).loud);}
  if(mp&&!w.rpg){const so=new R.Vector3(),sd=new R.Vector3();cam.getWorldPosition(so);cam.getWorldDirection(sd);room.emit('shot',{w:cur,x:+so.x.toFixed(2),y:+so.y.toFixed(2),z:+so.z.toFixed(2),dx:+sd.x.toFixed(3),dy:+sd.y.toFixed(3),dz:+sd.z.toFixed(3)});}
@@ -1361,9 +1363,19 @@ function bossFxRun(d,m){
  else if(d.a==='spawn'){const o=bossEnt();if(o&&o.bid===d.i)return;if(o){scene.remove(o.g);enemies.splice(enemies.indexOf(o),1)}spawn(true,false,d.t,{x:d.x,z:d.z});const e=bossEnt();if(e){e.bid=d.i;e.hp=e.mhp=d.mh}lastSpawnI=d.i;killfeed('☠ BOSS : '+BT[d.t].n+' — '+BT[d.t].d,'#ff5a3a')}
  else if(d.a==='dead')bossDeadNet(d)}
 function bossKeepNew(){for(let i=enemies.length-1;i>=0;i--){const e=enemies[i];if(e.boss&&e.bid===lastSpawnI)continue;scene.remove(e.g);enemies.splice(i,1)}}
+/* bouche du canon du boss : décalée à droite et vers le bas de la vue */
+function bossGun(o,fw){const rt=new R.Vector3(1,0,0).applyQuaternion(cam.quaternion),up=new R.Vector3(0,1,0).applyQuaternion(cam.quaternion);
+ return o.clone().addScaledVector(fw,.9).addScaledVector(rt,.45).addScaledVector(up,-.4)}
 function bossAtk(e){const bt=e.bt,fw=new R.Vector3(),o=cam.getWorldPosition(new R.Vector3()),bp=e.g.position;cam.getWorldDirection(fw);
- if(bt===0){e.atk=.1;const d2=fw.clone().add(new R.Vector3((rnd()-.5)*.05,(rnd()-.5)*.05,(rnd()-.5)*.05)).normalize();sfx.eshot(0,0);room.emit('shot',{w:0,x:+o.x.toFixed(2),y:+o.y.toFixed(2),z:+o.z.toFixed(2),dx:+d2.x.toFixed(3),dy:+d2.y.toFixed(3),dz:+d2.z.toFixed(3)});spawnBullet(o,o.clone().addScaledVector(d2,.8),d2,7,0,false)}
- else if(bt===1){e.atk=2.5;e.ph=2;e.pt=.65;e.hitSet=null;sfx.roar()}
+ if(bt===0){e.atk=.1;const d2=fw.clone().add(new R.Vector3((rnd()-.5)*.05,(rnd()-.5)*.05,(rnd()-.5)*.05)).normalize();sfx.shot(0,.7);shake=Math.max(shake,.05);const mzB=bossGun(o,fw);spark(mzB,0xffcc55,3,2,.1);room.emit('shot',{w:0,x:+o.x.toFixed(2),y:+o.y.toFixed(2),z:+o.z.toFixed(2),dx:+d2.x.toFixed(3),dy:+d2.y.toFixed(3),dz:+d2.z.toFixed(3)});spawnBullet(o,mzB,d2,7,0,false)}
+ else if(bt===1){if(adsHeld){e.atk=2.5;e.ph=2;e.pt=.65;e.hitSet=null;sfx.roar()}
+  else{ /* coup de faux au corps à corps : cône devant le boss */
+   e.atk=.55;sfx.imp();shake=Math.max(shake,.12);
+   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);
+   ringFx(v1.set(bp.x+fx*2.2,1.4,bp.z+fz*2.2),new R.Vector3(fx,0,fz),0xc84bff,3.2);
+   remote.forEach((r,id)=>{if(!r.g.visible)return;const dx=r.g.position.x-bp.x,dz=r.g.position.z-bp.z,dist=Math.hypot(dx,dz);
+    if(dist>5.2||Math.abs(r.g.position.y-bp.y)>2.6)return;if((dx*fx+dz*fz)/(dist||1)<.25)return;
+    room.emit('hit',{t:id,d:26,wn:'FAUCHEUR'});hitMark(false);bloodFx(v1.set(r.g.position.x,1.2,r.g.position.z),v2.set(0,.3,-1),false)})}}
  else if(bt===2){e.atk=3;ray.set(o,fw);ray.far=90;const h=ray.intersectObjects(bm,false)[0];let pt=h?h.point.clone():o.clone().addScaledVector(fw,fw.y<-.02?-o.y/fw.y:40);
   for(let i=0;i<3;i++)bossFx({a:'shell',x:+bp.x.toFixed(1),z:+bp.z.toFixed(1),tx:+(pt.x+(rnd()-.5)*(i?9:1)).toFixed(1),tz:+(pt.z+(rnd()-.5)*(i?9:1)).toFixed(1),dl:i*.45})}
  else if(bt===3){let best=null,ba=.14;remote.forEach((r,id)=>{if(!r.g.visible)return;const tp=new R.Vector3(r.g.position.x,r.g.position.y+1.5,r.g.position.z),a=tp.clone().sub(o).angleTo(fw);if(a<ba&&bossLos(o,tp)){ba=a;best=id}});if(best){e.atk=3.2;bossFx({a:'snipe',t:best,x:+bp.x.toFixed(1),z:+bp.z.toFixed(1)})}}
@@ -1378,11 +1390,11 @@ function bossHaz(dt){
   if(!w.hit&&!P.dead&&Math.abs(Math.hypot(P.pos.x-w.x,P.pos.z-w.z)-w.r)<1.6&&P.pos.y<.9){w.hit=1;hurt(34,{x:w.x,z:w.z});shake=Math.max(shake,.6);blastKb(v1.set(w.x,0,w.z),40,8)}
   if(w.r>=36){scene.remove(w.m);bWaves.splice(i,1)}}}
 function bossUpd(e,dt){const p=e.g.position,ox=p.x,oz=p.z,ctl=mp&&bossCtl,host=!mp;updEnemyFlash(e,dt);
- if(ctl){p.x=P.pos.x;p.z=P.pos.z;p.y=P.pos.y;e.g.rotation.y=P.yaw;e.atk-=dt;e.nt-=dt;e.net=null;
+ if(ctl){if(!(e.pt>0))e.pt=0;if(!(e.atk===e.atk))e.atk=0;p.x=P.pos.x;p.z=P.pos.z;p.y=P.pos.y;e.g.rotation.y=P.yaw;e.atk-=dt;e.nt-=dt;e.net=null;
   if(e.ph===2){e.pt-=dt;P.pos.x=Math.max(-B+.5,Math.min(B-.5,P.pos.x-Math.sin(P.yaw)*17*dt));P.pos.z=Math.max(-B+.5,Math.min(B-.5,P.pos.z-Math.cos(P.yaw)*17*dt));collide(P.pos,.4);
    remote.forEach((r,id)=>{if(!r.g.visible||(e.hitSet&&e.hitSet[id]))return;if(Math.hypot(r.g.position.x-p.x,r.g.position.z-p.z)<3.6){(e.hitSet=e.hitSet||{})[id]=1;room.emit('hit',{t:id,d:32,wn:'FAUCHEUR'});sfx.imp();hitMark(false)}});
    if(e.pt<=0){e.ph=0;e.hitSet=null}}
-  if(held&&e.atk<=0&&e.ph!==2)bossAtk(e);
+  if((held||(e.bt===1&&adsHeld))&&e.atk<=0&&e.ph!==2)bossAtk(e);
   if(e.bt===3&&adsHeld&&e.nt<=0){e.nt=4;ringFx(v1.set(p.x,.2,p.z),new R.Vector3(0,1,0),0x40e8ff,3);P.pos.x=Math.max(-55,Math.min(55,P.pos.x-Math.sin(P.yaw)*14));P.pos.z=Math.max(-55,Math.min(55,P.pos.z-Math.cos(P.yaw)*14));collide(P.pos,.4);p.x=P.pos.x;p.z=P.pos.z;e.blk=(e.blk|0)+1;ringFx(v1.set(p.x,.2,p.z),new R.Vector3(0,1,0),0x40e8ff,3)}}
  else if(!host){const s=e.net;if(s){const k=Math.min(1,dt*9);p.x+=(s.x-p.x)*k;p.z+=(s.z-p.z)*k;e.g.rotation.y=s.y;if(s.h<e.hp-1){e.fl=.12;flashEnemy(e)}e.hp=s.h;e.ph=s.ph;if(s.k!==e.blk){e.blk=s.k;ringFx(v1.set(p.x,.2,p.z),new R.Vector3(0,1,0),0x40e8ff,3)}}}
  else{const tg=bTargets();let t=null,td=1e9;for(const q of tg){const q2=Math.hypot(q.x-p.x,q.z-p.z);if(q2<td){td=q2;t=q}}if(!t){t={x:p.x,z:p.z,id:null};td=1}
@@ -1624,7 +1636,7 @@ const ADS_BACK=[-.22,0,0,0,0,0,0,-.1,0,0];
  if(smokeT>0){smokeT-=dt;puffT-=dt;if(puffT<=0){puffT=.045;const wp=new R.Vector3();pivot.updateMatrixWorld(true);fl.getWorldPosition(wp);spark(wp,0xbdbdbd,1,.4,.09,-1.5)}}
   if(reload>0){reload-=dt;if(reload<=0){const w=W[cur],a=A[cur],n=Math.min(w.mag-a.ammo,a.res);a.ammo+=n;a.res-=n}}
   if(cheats.infiniteAmmo&&!W[cur].knife){A[cur].ammo=W[cur].mag;A[cur].res=Math.max(A[cur].res,W[cur].mag*4);gren=Math.max(gren,3)}
- if(held&&(W[cur].auto||!fired))tryShoot();
+ if(held&&(bossCtl||W[cur].auto||!fired))tryShoot();
  if(T-P.last>5&&P.hp<P.maxHp)P.hp=Math.min(P.maxHp,P.hp+15*dt);
  /* ennemis, ramassages, particules, vagues */
  enemies.forEach(e=>updEnemy(e,dt));for(let i=enemies.length-1;i>=0;i--)if(enemies[i].rm)enemies.splice(i,1);
@@ -1743,8 +1755,9 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  }else{if(!mpMapEndAt)resetMapTimer();mapTime=Math.max(0,(mpMapEndAt-Date.now())/1000)}
  if(!isOwn){const s=ownPres&&ownPres.bs;let be=bossEnt();if(s&&s.i>=lastSpawnI&&s.i!==deadBid&&(!be||be.bid!==s.i)){if(be){scene.remove(be.g);enemies.splice(enemies.indexOf(be),1)}spawn(true,false,s.t,{x:s.x,z:s.z});be=bossEnt();if(be){be.bid=s.i;be.mhp=s.m;be.hp=s.h;lastSpawnI=s.i}}if(be&&s)be.net=s}
  {const be0=bossEnt(),want=isOwn&&!!be0&&!P.dead;
-  if(want&&!bossCtl){bossCtl=true;be0.net=null;P.pos.set(be0.g.position.x,be0.g.position.y,be0.g.position.z);P.vel.set(0,0,0);P.speedMul=[.8,1.15,.7,1.05,.7][be0.bt];ctlH=be0.eh*.4;banner('HÔTE = 1er DU CLASSEMENT : VOUS ÊTES LE BOSS · '+BT[be0.bt].n+' · clic = attaque'+(be0.bt===3?' · clic droit = blink':''),4,26)}
+  if(want&&!bossCtl){bossCtl=true;be0.net=null;be0.ph=0;be0.pt=0;be0.hitSet=null;be0.atk=Math.min(be0.atk||0,.6);held=0;fired=0;P.pos.set(be0.g.position.x,be0.g.position.y,be0.g.position.z);P.vel.set(0,0,0);P.speedMul=[.8,1.15,.7,1.05,.7][be0.bt];ctlH=be0.eh*.4;banner('HÔTE = 1er DU CLASSEMENT : VOUS ÊTES LE BOSS · '+BT[be0.bt].n+' · clic = attaque'+(be0.bt===3?' · clic droit = blink':''),4,26)}
   else if(!want&&bossCtl){bossCtl=false;P.speedMul=1;if(be0)banner('VOUS PERDEZ LE BOSS',2.5,30)}}
+ {const bl=bossLive();if(bl!==mpBossLive){mpBossLive=bl;const Mm=MODES[mpMode];if(Mm&&(Mm.w||Mm.gg)){mpLoadout(mpMode);banner(bl?'BOSS : VOS 2 ARMES SÉLECTIONNÉES':'BOSS ÉLIMINÉ : ARME DU MODE',3,30)}}}
  room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:(P.dead||bossCtl)?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0,bs:bossPack()});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;const kInf=lastK,kwInf=lastKWn,khInf=lastKH;room.emit('kill',{k:kInf,v:myId,wn:kwInf,hs:khInf});
   kfEntry(kInf?{killer:nameOf(kInf),weapon:kwInf||'',victim:myName,head:!!khInf}:{txt:'☠ '+myName+' — SUICIDE',color:'#8a94a0'});
