@@ -625,7 +625,7 @@ let mpMode='dm',ggIdx=0,mpAuto=true; /* mpAuto : le mode change au hasard à cha
 /* identifiant numérique d'un joueur (p9 < p10) : le plus ancien connecté = le plus petit numéro = hôte */
 const peerNum=x=>parseInt(String(x.peer).replace(/\D/g,''),10)||0;
 function randomMode(ex){const k=Object.keys(MODES).filter(x=>x!==ex);return k[Math.floor(Math.random()*k.length)]}
-let mpBossLive=false;const bossLive=()=>{const e=bossEnt();return mp&&!!e&&!e.dying&&!e.dead};
+let mpBossLive=false,mpModeBeforeBoss=null;const bossLive=()=>{const e=bossEnt();return mp&&!!e&&!e.dying&&!e.dead};
 /* Quand un boss est en vie, les modes à arme imposée sont suspendus : chacun a ses 2 armes choisies. */
 function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=bossLive()?null:(M.gg?[GG[ggIdx]]:M.w);
  owned=W.map((w,i)=>!al||al.includes(i));
@@ -1350,7 +1350,10 @@ function bossFx(d){if(mp)room.emit('boss',d);else bossFxRun(d,null)}
 function bossLos(a,b){const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,l=Math.hypot(dx,dy,dz)||1;ray.set(a,v2.set(dx/l,dy/l,dz/l));ray.far=l;return ray.intersectObjects(bm,false).length===0}
 function bdm(e,a,hs){if(mp&&e.boss){room.emit('hit',{t:'boss',d:Math.round(Math.min(a,400)),hs:hs?1:0,wn:wName(cur)});return 0}return a}
 function bossClear(){for(const s of bShells){scene.remove(s.m);scene.remove(s.r)}bShells.length=0;for(const w of bWaves)scene.remove(w.m);bWaves.length=0;bSnipes.length=0}
-function mpSpawnBoss(){let t;do{t=Math.floor(rnd()*BT.length)}while(t===mpBt&&BT.length>1);mpBt=t;const a=rnd()*6.28;bossFx({a:'spawn',t,i:Date.now(),x:+(Math.cos(a)*30).toFixed(1),z:+(Math.sin(a)*30).toFixed(1),mh:Math.round(BT[t].hp*DF.hp*(1+.5*remote.size))})}
+function mpSpawnBoss(){let t;do{t=Math.floor(rnd()*BT.length)}while(t===mpBt&&BT.length>1);
+ /* L’hôte choisit le boss qu’il souhaite incarner parmi les boss disponibles. */
+ if(mp&&bossOwn===myId){const choix=prompt('Choisis le boss à incarner :\n'+BT.map((b,i)=>(i+1)+'. '+b.n+' — '+b.d).join('\n'),String(t+1));if(choix!==null){const n=parseInt(choix,10)-1;if(Number.isInteger(n)&&n>=0&&n<BT.length)t=n}}
+ mpBt=t;const a=rnd()*6.28;bossFx({a:'spawn',t,i:Date.now(),x:+(Math.cos(a)*30).toFixed(1),z:+(Math.sin(a)*30).toFixed(1),mh:Math.round(BT[t].hp*DF.hp*(1+.5*remote.size))})}
 function bossPack(){if(!bossCtl)return 0;const e=bossEnt();if(!e||e.dying)return 0;const p=e.g.position;return{i:e.bid|0,t:e.bt,x:+p.x.toFixed(1),z:+p.z.toFixed(1),y:+e.g.rotation.y.toFixed(2),h:Math.round(e.hp),m:Math.round(e.mhp),ph:e.ph|0,k:e.blk|0}}
 function bossBlast(p,r,dm){spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);sfx.boom();ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);const d=p.distanceTo(cam.position);shake=Math.max(shake,Math.max(0,1-d/40));if(!P.dead&&d<r+1.2)hurt(dm*(1-d/(r+1.2)),p);blastKb(p,r,12)}
 function bossDeadNet(d){const e=bossEnt();if(!e)return;deadBid=d.i;e.dead=T;e.hp=0;killFx(e.g.position);shake=Math.max(shake,.7);sfx.boom();ringFx(v1.copy(e.g.position).setY(.2),new R.Vector3(0,1,0),0xff5522,7);
@@ -1765,7 +1768,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  {const be0=bossEnt(),want=isOwn&&!!be0&&!P.dead;
   if(want&&!bossCtl){bossCtl=true;be0.net=null;be0.ph=0;be0.pt=0;be0.hitSet=null;be0.atk=Math.min(be0.atk||0,.6);held=0;fired=0;P.pos.set(be0.g.position.x,be0.g.position.y,be0.g.position.z);P.vel.set(0,0,0);P.speedMul=[.8,1.15,.7,1.05,.7][be0.bt];ctlH=be0.eh*.4;banner('VOUS ÊTES L’HÔTE : VOUS ÊTES LE BOSS · '+BT[be0.bt].n+' · clic = attaque'+(be0.bt===3?' · clic droit = blink':''),4,26)}
   else if(!want&&bossCtl){bossCtl=false;P.speedMul=1;if(be0)banner('VOUS PERDEZ LE BOSS',2.5,30)}}
- {const bl=bossLive();if(bl!==mpBossLive){mpBossLive=bl;const Mm=MODES[mpMode];if(Mm&&(Mm.w||Mm.gg)){mpLoadout(mpMode);banner(bl?'BOSS : VOS 2 ARMES SÉLECTIONNÉES':'BOSS ÉLIMINÉ : ARME DU MODE',3,30)}}}
+ {const bl=bossLive();if(bl!==mpBossLive){mpBossLive=bl;if(bl){mpModeBeforeBoss=mpMode;mpMode='dm';ggIdx=0;mpLoadout('dm');banner('BOSS EN VIE · DEATHMATCH ACTIVÉ',3,32)}else{if(mpModeBeforeBoss&&MODES[mpModeBeforeBoss])mpMode=mpModeBeforeBoss;mpModeBeforeBoss=null;ggIdx=0;mpLoadout(mpMode);banner('BOSS ÉLIMINÉ · MODE '+MODES[mpMode].n.toUpperCase()+' RÉTABLI',3,30)}}}
  room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:(P.dead||bossCtl)?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0,ho:isHost?1:0,nh:mpNextHost||0,nm:mpNextHostMap,bs:bossPack()});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;const kInf=lastK,kwInf=lastKWn,khInf=lastKH;room.emit('kill',{k:kInf,v:myId,wn:kwInf,hs:khInf});
   kfEntry(kInf?{killer:nameOf(kInf),weapon:kwInf||'',victim:myName,head:!!khInf}:{txt:'☠ '+myName+' — SUICIDE',color:'#8a94a0'});
