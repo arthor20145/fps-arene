@@ -166,6 +166,8 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
   <div class="modeRow">
    <button id="modeSolo" class="on">&#127919; Solo &mdash; Vagues</button>
    <button id="modeMp">&#127760; En ligne &mdash; Deathmatch</button>
+   <button id="modeBoss">☠️ Boss Rush<small>Que des boss, vague après vague</small></button>
+   <button id="modeBossMp">🌐 Boss en ligne<small>Multijoueur : un joueur incarne le boss</small></button>
   </div>
   <p id="mpn" style="margin:8px 2px 0;font-size:14px;opacity:.7"></p>
   <div id="mpModeBox" style="display:none;margin-top:12px"><span style="display:block;font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.65;margin-bottom:8px">Type de partie en ligne</span><div class="diffRow" id="mpModeRow"></div><p id="mpModeNote" style="font-size:12px;opacity:.65;margin:8px 2px 0"></p></div>
@@ -213,6 +215,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
   <p style="font-size:12px;opacity:.6;margin:8px 2px 0">Tu portes 2 armes à feu (principale + secondaire) en plus du couteau. Clique sur le ★ pour définir l'arme principale.</p>
   <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button>
   <button id="armSetSecond" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme secondaire</button></div>
+ <div class="mgroup"><span class="mtitle">Améliorations des armes de boss</span><p style="font-size:13px;opacity:.75">Augmente les dégâts infligés par les attaques du boss lorsque tu l'incarnes en multijoueur.</p><div id="bossUpgradeInfo" style="margin:8px 0;color:#ffd65a"></div><button id="bossDamageUpgrade" style="width:100%;font-size:16px">Améliorer les dégâts</button></div>
  <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
  <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
  <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
@@ -635,6 +638,10 @@ function mpLoadout(mode){const M=MODES[mode]||MODES.dm,al=bossLive()?null:(M.gg?
 function ggAdvance(){if(ggIdx>=GG.length-1){P.score+=500;ggIdx=0;banner('GUN GAME TERMINÉ ! +500 · ON RECOMMENCE',4,36)}else{ggIdx++;banner('GUN GAME '+(ggIdx+1)+'/'+GG.length+' — '+W[GG[ggIdx]].n,2.5,32)}mpLoadout('gungame')}
 let sprExh=false;
 let wantMp=false;
+let bossOnlyMode=false;
+let mpBossRushMode=false,mpBossRushNextAt=0;
+const bossDamageCost=level=>Math.round(250*Math.pow(1.65,level));
+const bossDamageMult=()=>1+Math.max(0,save.bossDmg||0)*.15;
 function setupMenu(){
   $('diffRow').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     diffKey=b.dataset.d;DF=DIFFS[diffKey];
@@ -651,8 +658,10 @@ function setupMenu(){
     sel();
     upd();
     ['modeSolo','modeMp'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(()=>{$('mpModeBox').style.display=wantMp?'block':'none'},0)))})();
-  $('modeSolo').onclick=()=>{wantMp=false;$('modeSolo').classList.add('on');$('modeMp').classList.remove('on')};
-  $('modeMp').onclick=()=>{if($('modeMp').disabled)return;wantMp=true;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on')};
+  $('modeSolo').onclick=()=>{wantMp=false;bossOnlyMode=false;mpBossRushMode=false;$('modeSolo').classList.add('on');$('modeMp').classList.remove('on');$('modeBoss').classList.remove('on');$('modeBossMp').classList.remove('on')};
+  $('modeBoss').onclick=()=>{wantMp=false;bossOnlyMode=true;mpBossRushMode=false;$('modeBoss').classList.add('on');$('modeSolo').classList.remove('on');$('modeMp').classList.remove('on');$('modeBossMp').classList.remove('on')};
+  $('modeBossMp').onclick=()=>{if($('modeMp').disabled)return;wantMp=true;bossOnlyMode=false;mpBossRushMode=true;mpAuto=false;mpMode='dm';$('modeBossMp').classList.add('on');$('modeSolo').classList.remove('on');$('modeMp').classList.remove('on');$('modeBoss').classList.remove('on');$('mpModeBox').style.display='none';$('mpn').textContent='Mode Boss en ligne : les joueurs affrontent un boss incarné par l’hôte. Le boss change à la rotation de carte.'};
+  $('modeMp').onclick=()=>{if($('modeMp').disabled)return;wantMp=true;bossOnlyMode=false;mpBossRushMode=false;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on');$('modeBoss').classList.remove('on');$('modeBossMp').classList.remove('on')};
   $('menuHelp').onclick=()=>{const g=$('keyGrid');
     if(g.style.display==='none'){g.innerHTML=CONTROLS.map(c=>'<div><kbd>'+c[0]+'</kbd>'+c[1]+'</div>').join('');g.style.display='grid'}else g.style.display='none'};
   $('menuSettings').onclick=e=>{e.stopPropagation();$('menu').style.display='none';$('settings').style.display='flex'};
@@ -811,13 +820,14 @@ function buyShop(id){if(state!=='shop'||shopStock[id]<=0)return;const price=shop
 function updateShopUI(){const pts=$('shopPoints');if(!pts)return;pts.textContent='Points : '+P.points;const g=$('shopGrid');g.innerHTML='';Object.keys(SHOP_CFG).forEach(id=>{const c=SHOP_CFG[id],left=shopStock[id],price=shopPrice(id);const d=document.createElement('div');d.className='shopItem';d.innerHTML='<h3>'+c.label+'</h3><p>'+c.desc+'</p><p>Prix : <b>'+price+'</b> points · Stock : '+left+'/'+SHOP_MAX[id]+'</p>';const b=document.createElement('button');b.textContent=left<=0?'ÉPUISÉ':'Acheter';b.disabled=left<=0||P.points<price;b.onclick=()=>buyShop(id);d.appendChild(b);g.appendChild(d)})}
 /* ================= SAUVEGARDE PERSISTANTE (armurerie) ================= */
 const SAVE_KEY='fps-arene-v1';
-let save={bank:0,own:[true,true,false,false,false,true],start:1,second:2,arm:{}};
+let save={bank:0,own:[true,true,false,false,false,true],start:1,second:2,arm:{},bossDmg:0};
 try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(s&&s.own&&s.arm)save=Object.assign(save,s)}catch(e){}
 if(typeof save.start!=='number'||save.start<0||save.start>=W.length)save.start=1;
 if(typeof save.second!=='number'||save.second<0||save.second>=W.length||save.second===save.start)save.second=1;
 if(!Array.isArray(save.own)||save.own.length!==W.length)save.own=[true,true,true,false,false,true];
 save.own=W.map(()=>true); /* toutes les armes sont débloquées dans l'armurerie */
 if(!save.bought)save.bought={};
+if(!Number.isFinite(save.bossDmg)||save.bossDmg<0)save.bossDmg=0;
 /* chargeur = [arme principale, arme secondaire] : 2 armes à feu différentes (le couteau est toujours porté en plus) */
 function normLoadout(){const l=[save.start,save.second].filter((v,i,a)=>typeof v==='number'&&v>=0&&v<W.length&&!W[v].knife&&a.indexOf(v)===i);
  for(const d of [1,0,2,3,7,8,4,6]){if(l.length>=2)break;if(!l.includes(d))l.push(d)}return l.slice(0,2)}
@@ -834,6 +844,7 @@ function armoryClose(){$('armory').style.display='none';$('menu').style.display=
 function setAtt(kind,key){ARM[armSel][kind]=key;save.arm[armSel]={scope:ARM[armSel].scope,sil:ARM[armSel].sil};saveGame();refreshAtt();updateArmoryUI()}
 function updateArmoryUI(){
  $('armPoints').textContent='Solde : '+save.bank+' pts';
+ const bLvl=save.bossDmg||0,bCost=bossDamageCost(bLvl),bi=$('bossUpgradeInfo'),bu=$('bossDamageUpgrade');if(bi)bi.textContent='Niveau '+bLvl+' · Dégâts x'+bossDamageMult().toFixed(2)+' · Prochain niveau : '+bCost+' pts';if(bu){bu.textContent='Améliorer les dégâts ('+bCost+' pts)';bu.disabled=save.bank<bCost||bLvl>=10;bu.onclick=()=>{if(save.bank<bCost||bLvl>=10)return;save.bank-=bCost;save.bossDmg=bLvl+1;saveGame();updateArmoryUI();$('armMsg').textContent='✔ Dégâts des armes de boss améliorés !'}}
  const wg=$('armWeapons');wg.innerHTML='';
  W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
   const isStart=i===save.start;
@@ -1295,7 +1306,7 @@ function changeMapByTimer(){
   P.score=0; P.streak=0; P.points=0;
   wave=0;
   resetMapTimer();bossClear();if(mp)mpSpawnBoss();
-  if(mp&&mpAuto){mpMode=randomMode(mpMode);ggIdx=0;mpLoadout(mpMode);banner('NOUVELLE MAP · MODE : '+MODES[mpMode].n.toUpperCase(),4,34)}
+  if(mp&&mpAuto&&!mpBossRushMode){mpMode=randomMode(mpMode);ggIdx=0;mpLoadout(mpMode);banner('NOUVELLE MAP · MODE : '+MODES[mpMode].n.toUpperCase(),4,34)}
   else banner('NOUVELLE MAP · SCORE RÉINITIALISÉ',3,34);
 }
 function rotateMapForWave(nextWave){const next=Math.floor((nextWave-1)/5)%MAPS.length;if(next!==mapIndex)applyMap(next,true)}
@@ -1336,7 +1347,7 @@ const BT=[
  {n:'BOMBARDIER',hp:1600,sp:1.7,sc:2.6,eh:3.8,col:0x6b4a12,vis:0xffb020,d:'pilonne le sol d’obus explosifs'},
  {n:'SPECTRE',hp:1200,sp:4.2,sc:2.1,eh:3.2,col:0x16324a,vis:0x40e8ff,d:'téléportation + sniper, mets-toi à couvert'},
  {n:'TITAN',hp:2800,sp:1.9,sc:3.4,eh:5,col:0x30343a,vis:0xff6a1a,d:'onde de choc : saute pour l’esquiver !'}];
-let curBt=0,mpBt=-1,deadBid=-1,bossCtl=false,ctlH=0,bossOwn=null,lastSpawnI=0;
+let curBt=0,mpBt=-1,deadBid=-1,bossCtl=false,ctlH=0,bossOwn=null,lastSpawnI=0,mpBossNextOwner=null;
 const bShells=[],bSnipes=[],bWaves=[],bsRingG=new R.RingGeometry(.9,1,40);
 const bsRingM=c=>new R.MeshBasicMaterial({color:c,transparent:true,opacity:.75,side:R.DoubleSide,depthWrite:false});
 function bossLook(e,add){const bt=e.bt,M=em.metal;
@@ -1355,10 +1366,10 @@ function mpSpawnBoss(){let t;do{t=Math.floor(rnd()*BT.length)}while(t===mpBt&&BT
  if(mp&&bossOwn===myId){const choix=prompt('Choisis le boss à incarner :\n'+BT.map((b,i)=>(i+1)+'. '+b.n+' — '+b.d).join('\n'),String(t+1));if(choix!==null){const n=parseInt(choix,10)-1;if(Number.isInteger(n)&&n>=0&&n<BT.length)t=n}}
  mpBt=t;const a=rnd()*6.28;bossFx({a:'spawn',t,i:Date.now(),x:+(Math.cos(a)*30).toFixed(1),z:+(Math.sin(a)*30).toFixed(1),mh:Math.round(BT[t].hp*DF.hp*(1+.5*remote.size))})}
 function bossPack(){if(!bossCtl)return 0;const e=bossEnt();if(!e||e.dying)return 0;const p=e.g.position;return{i:e.bid|0,t:e.bt,x:+p.x.toFixed(1),z:+p.z.toFixed(1),y:+e.g.rotation.y.toFixed(2),h:Math.round(e.hp),m:Math.round(e.mhp),ph:e.ph|0,k:e.blk|0}}
-function bossBlast(p,r,dm){spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);sfx.boom();ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);const d=p.distanceTo(cam.position);shake=Math.max(shake,Math.max(0,1-d/40));if(!P.dead&&d<r+1.2)hurt(dm*(1-d/(r+1.2)),p);blastKb(p,r,12)}
+function bossBlast(p,r,dm){dm*=bossDamageMult();spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);sfx.boom();ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);const d=p.distanceTo(cam.position);shake=Math.max(shake,Math.max(0,1-d/40));if(!P.dead&&d<r+1.2)hurt(dm*(1-d/(r+1.2)),p);blastKb(p,r,12)}
 function bossDeadNet(d){const e=bossEnt();if(!e)return;deadBid=d.i;e.dead=T;e.hp=0;killFx(e.g.position);shake=Math.max(shake,.7);sfx.boom();ringFx(v1.copy(e.g.position).setY(.2),new R.Vector3(0,1,0),0xff5522,7);
- const mine=d.by===myId;P.score+=mine?1500:400;if(!P.dead){P.hp=P.maxHp;refill()}if(mine)registerKillstreak();
- kfEntry({killer:mine?myName:nameOf(d.by),weapon:'',victim:BT[e.bt].n,me:mine,color:'#ffd447'});banner(BT[e.bt].n+' ÉLIMINÉ · '+(mine?'+1500':'+400'),4,34)}
+ const mine=d.by===myId;const nextBossId=mp&&mpBossRushMode&&d.by?d.by:null;/* Le changement de boss après un coup fatal est réservé au mode Boss Rush multijoueur. */if(nextBossId)mpBossNextOwner=nextBossId;P.score+=mine?1500:400;if(!P.dead){P.hp=P.maxHp;refill()}if(mine)registerKillstreak();
+ kfEntry({killer:mine?myName:nameOf(d.by),weapon:'',victim:BT[e.bt].n,me:mine,color:'#ffd447'});banner(BT[e.bt].n+' ÉLIMINÉ · '+(mine?'+1500':'+400'),4,34);if(nextBossId)banner(nameOf(nextBossId)+' A TUÉ LE BOSS ET DEVIENT LE PROCHAIN BOSS !',4,28)}
 function bossFxRun(d,m){
  if(d.a==='shell'){const a=new R.Vector3(d.x,5,d.z),b=new R.Vector3(d.tx,.1,d.tz),mk=new R.Mesh(new R.SphereGeometry(.45,10,10),new R.MeshBasicMaterial({color:0xffa030})),ring=new R.Mesh(bsRingG,bsRingM(0xff3311));ring.rotation.x=-Math.PI/2;ring.position.set(d.tx,.08,d.tz);ring.scale.setScalar(6);mk.visible=false;scene.add(mk,ring);bShells.push({a,b,m:mk,r:ring,t:-(d.dl||0),dur:1.5+a.distanceTo(b)/40})}
  else if(d.a==='snipe')bSnipes.push({id:d.t,o:new R.Vector3(d.x,3.6,d.z),t:0});
@@ -1378,7 +1389,7 @@ function bossAtk(e){const bt=e.bt,fw=new R.Vector3(),o=cam.getWorldPosition(new 
    ringFx(v1.set(bp.x+fx*2.2,1.4,bp.z+fz*2.2),new R.Vector3(fx,0,fz),0xc84bff,3.2);
    remote.forEach((r,id)=>{if(!r.g.visible)return;const dx=r.g.position.x-bp.x,dz=r.g.position.z-bp.z,dist=Math.hypot(dx,dz);
     if(dist>5.2||Math.abs(r.g.position.y-bp.y)>2.6)return;if((dx*fx+dz*fz)/(dist||1)<.25)return;
-    room.emit('hit',{t:id,d:26,wn:'FAUCHEUR'});hitMark(false);bloodFx(v1.set(r.g.position.x,1.2,r.g.position.z),v2.set(0,.3,-1),false)})}}
+    room.emit('hit',{t:id,d:Math.round(26*bossDamageMult()),wn:'FAUCHEUR'});hitMark(false);bloodFx(v1.set(r.g.position.x,1.2,r.g.position.z),v2.set(0,.3,-1),false)})}}
  else if(bt===2){e.atk=3;ray.set(o,fw);ray.far=90;const h=ray.intersectObjects(bm,false)[0];let pt=h?h.point.clone():o.clone().addScaledVector(fw,fw.y<-.02?-o.y/fw.y:40);
   for(let i=0;i<3;i++)bossFx({a:'shell',x:+bp.x.toFixed(1),z:+bp.z.toFixed(1),tx:+(pt.x+(rnd()-.5)*(i?9:1)).toFixed(1),tz:+(pt.z+(rnd()-.5)*(i?9:1)).toFixed(1),dl:i*.45})}
  else if(bt===3){let best=null,ba=.14;remote.forEach((r,id)=>{if(!r.g.visible)return;const tp=new R.Vector3(r.g.position.x,r.g.position.y+1.5,r.g.position.z),a=tp.clone().sub(o).angleTo(fw);if(a<ba&&bossLos(o,tp)){ba=a;best=id}});if(best){e.atk=3.2;bossFx({a:'snipe',t:best,x:+bp.x.toFixed(1),z:+bp.z.toFixed(1)})}}
@@ -1388,14 +1399,14 @@ function bossHaz(dt){
   if(k>=1){scene.remove(s.m);scene.remove(s.r);bShells.splice(i,1);bossBlast(s.b,6,45)}}
  for(let i=bSnipes.length-1;i>=0;i--){const s=bSnipes[i];s.t+=dt;let tp=null;if(s.id===myId&&!P.dead)tp=cam.getWorldPosition(new R.Vector3());else{const r=remote.get(s.id);if(r)tp=new R.Vector3(r.g.position.x,r.g.position.y+1.5,r.g.position.z)}
   if(!tp){bSnipes.splice(i,1);continue}
-  if(s.t<.95)tracer(s.o,tp,.25);else{tracer(s.o,tp,2.2);sfx.eshot(s.o.distanceTo(tp),0);if(s.id===myId&&bossLos(s.o,tp))hurt(38,s.o);bSnipes.splice(i,1)}}
+  if(s.t<.95)tracer(s.o,tp,.25);else{tracer(s.o,tp,2.2);sfx.eshot(s.o.distanceTo(tp),0);if(s.id===myId&&bossLos(s.o,tp))hurt(38*bossDamageMult(),s.o);bSnipes.splice(i,1)}}
  for(let i=bWaves.length-1;i>=0;i--){const w=bWaves[i];w.r+=16*dt;w.m.scale.setScalar(w.r);w.m.material.opacity=Math.max(0,.8-w.r/42);
   if(!w.hit&&!P.dead&&Math.abs(Math.hypot(P.pos.x-w.x,P.pos.z-w.z)-w.r)<1.6&&P.pos.y<.9){w.hit=1;hurt(34,{x:w.x,z:w.z});shake=Math.max(shake,.6);blastKb(v1.set(w.x,0,w.z),40,8)}
   if(w.r>=36){scene.remove(w.m);bWaves.splice(i,1)}}}
 function bossUpd(e,dt){const p=e.g.position,ox=p.x,oz=p.z,ctl=mp&&bossCtl,host=!mp;updEnemyFlash(e,dt);
  if(ctl){if(!(e.pt>0))e.pt=0;if(!(e.atk===e.atk))e.atk=0;p.x=P.pos.x;p.z=P.pos.z;p.y=P.pos.y;e.g.rotation.y=P.yaw;e.atk-=dt;e.nt-=dt;e.net=null;
   if(e.ph===2){e.pt-=dt;P.pos.x=Math.max(-B+.5,Math.min(B-.5,P.pos.x-Math.sin(P.yaw)*17*dt));P.pos.z=Math.max(-B+.5,Math.min(B-.5,P.pos.z-Math.cos(P.yaw)*17*dt));collide(P.pos,.4);
-   remote.forEach((r,id)=>{if(!r.g.visible||(e.hitSet&&e.hitSet[id]))return;if(Math.hypot(r.g.position.x-p.x,r.g.position.z-p.z)<3.6){(e.hitSet=e.hitSet||{})[id]=1;room.emit('hit',{t:id,d:32,wn:'FAUCHEUR'});sfx.imp();hitMark(false)}});
+   remote.forEach((r,id)=>{if(!r.g.visible||(e.hitSet&&e.hitSet[id]))return;if(Math.hypot(r.g.position.x-p.x,r.g.position.z-p.z)<3.6){(e.hitSet=e.hitSet||{})[id]=1;room.emit('hit',{t:id,d:Math.round(32*bossDamageMult()),wn:'FAUCHEUR'});sfx.imp();hitMark(false)}});
    if(e.pt<=0){e.ph=0;e.hitSet=null}}
   if((held||(e.bt===1&&adsHeld))&&e.atk<=0&&e.ph!==2)bossAtk(e);
   if(e.bt===3&&adsHeld&&e.nt<=0){e.nt=4;ringFx(v1.set(p.x,.2,p.z),new R.Vector3(0,1,0),0x40e8ff,3);P.pos.x=Math.max(-55,Math.min(55,P.pos.x-Math.sin(P.yaw)*14));P.pos.z=Math.max(-55,Math.min(55,P.pos.z-Math.cos(P.yaw)*14));collide(P.pos,.4);p.x=P.pos.x;p.z=P.pos.z;e.blk=(e.blk|0)+1;ringFx(v1.set(p.x,.2,p.z),new R.Vector3(0,1,0),0x40e8ff,3)}}
@@ -1515,7 +1526,7 @@ function kfEntry(o){
 function kfClear(){const k=$('kf');if(k)k.innerHTML=''}
 /* wrapper rétro-compatible : killfeed('texte', couleur) */
 function killfeed(txt,color){kfEntry({txt:txt,color:color})}
-function startWave(){wave++;rotateMapForWave(wave);const boss=wave%5===0;if(boss){const k=wave/5-1;curBt=k<BT.length?k:Math.floor(rnd()*BT.length)}toSpawn=boss?1:Math.max(1,Math.round((4+wave*2)*DF.cnt));banner(boss?'⚠ BOSS : '+BT[curBt].n+' ⚠':'VAGUE '+wave+' · '+DF.n.toUpperCase(),boss?3.5:2)}
+function startWave(){wave++;rotateMapForWave(wave);const boss=bossOnlyMode||wave%5===0;if(boss){const k=bossOnlyMode?(wave-1)%BT.length:wave/5-1;curBt=k<BT.length?k:Math.floor(rnd()*BT.length)}toSpawn=boss?1:Math.max(1,Math.round((4+wave*2)*DF.cnt));banner(bossOnlyMode?'☠ BOSS RUSH · '+BT[curBt].n+' ☠':boss?'⚠ BOSS : '+BT[curBt].n+' ⚠':'VAGUE '+wave+' · '+DF.n.toUpperCase(),boss?3.5:2)}
 /* ================= GRENADES, EXPLOSIONS, FRAPPE ================= */
 const gg=new R.SphereGeometry(.12,8,8),gmt=new R.MeshStandardMaterial({color:0x2a4a2a});
 for(let i=0;i<8;i++){const m=new R.Mesh(gg,gmt);m.visible=false;m.castShadow=true;m.userData={v:new R.Vector3(),f:0};scene.add(m);gr.push(m)}
@@ -1650,7 +1661,7 @@ const ADS_BACK=[-.22,0,0,0,0,0,0,-.1,0,0];
   // Deathmatch : aucune vague ni aucun bot, même après un changement de map.
   if(!mp){
     if(wt>0){wt-=dt;if(wt<=0)startWave()}
-    else if(toSpawn>0){spT-=dt;if(spT<=0&&alive<Math.min(5+wave,12)){const bossNow=wave%5===0;
+    else if(toSpawn>0){spT-=dt;if(spT<=0&&alive<Math.min(5+wave,12)){const bossNow=bossOnlyMode||wave%5===0;
      const bl=!bossNow&&wave>=3&&rnd()<Math.min(.45,.2+wave*.03);
      spawn(bossNow,bl,curBt);toSpawn--;spT=.8;if(toSpawn===0)banner2(bossNow?'⚠ BOSS EN APPROCHE':'COMBAT ENGAGÉ',2)}}
     else if(alive==0){wt=4;P.score+=200;P.hp=Math.min(P.maxHp,P.hp+25);refill();banner('VAGUE '+wave+' TERMINÉE',2.5,40);killfeed('✔ VAGUE '+wave+' NETTOYÉE  +'+200,'#6cc7ff')}
@@ -1672,7 +1683,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
  else renderer.render(scene,cam)}
 /* ================= ÉTAT & ENTRÉES ================= */
 function newGame(){bossClear();bossCtl=false;enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.forEach(q=>scene.remove(q.m));picks.length=0;
- mapIndex=0;applyMap(0,false);resetMapTimer();mpHostId=null;mpHostSeen=null;mpNextHost=null;mpNextHostMap=-1;mpPend=null;nhShown=-1;Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;P.sh=mp?T+2:0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};A[6]={ammo:0,res:0};rk.forEach(r=>scene.remove(r.m));rk.length=0;flames.forEach(s=>s.visible=false);flameAcc={};
+ mapIndex=0;applyMap(0,false);resetMapTimer();mpHostId=null;mpHostSeen=null;mpNextHost=null;mpNextHostMap=-1;mpPend=null;nhShown=-1;mpBossNextOwner=null;Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;P.sh=mp?T+2:0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};A[6]={ammo:0,res:0};rk.forEach(r=>scene.remove(r.m));rk.length=0;flames.forEach(s=>s.visible=false);flameAcc={};
  /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
  carry=normLoadout();owned=save.own.slice();owned[save.start]=true;owned[0]=true;owned[1]=true;owned[5]=true;
  if(mp){owned=owned.map(()=>true);cheats.god=cheats.infiniteAmmo=cheats.oneShot=false;cheatUnlocked=false;konamiPos=0;$('cheat').style.display='none'}
@@ -1744,8 +1755,10 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
  if(host&&!host.isMe&&!mpPend&&host.presence&&host.presence.ho===0){const alt=active.find(p=>!p.isMe&&p.peer!==host.peer&&p.presence&&p.presence.ho===1);if(alt)host=alt}
  const lead=host,prevHost=mpHostSeen;mpHostId=host?host.peer:null;mpHostSeen=mpHostId;const isHost=!!host&&host.isMe;
  if(isHost&&prevHost&&prevHost!==mpHostId&&!bossEnt())banner('VOUS ÊTES LE NOUVEL HÔTE (1er de la manche précédente)',3,30);
- const hostPresence=host&&host.presence?host.presence:null;bossOwn=lead?lead.peer:null;const isOwn=bossOwn===myId,ow=active.find(q=>q.peer===bossOwn),ownPres=ow&&ow.presence?ow.presence:null;
+ const hostPresence=host&&host.presence?host.presence:null;bossOwn=mpBossNextOwner|| (lead?lead.peer:null);
+ if(isHost&&mpBossRushMode&&state==='play'&&T>=mpBossRushNextAt&&!bossLive()){mpSpawnBoss();mpBossRushNextAt=T+7}const isOwn=bossOwn===myId,ow=active.find(q=>q.peer===bossOwn),ownPres=ow&&ow.presence?ow.presence:null;
  if(!isHost&&hostPresence&&hostPresence.au!=null)mpAuto=!!hostPresence.au;
+ if(!isHost&&hostPresence&&hostPresence.br!=null)mpBossRushMode=!!hostPresence.br;
  if(!isHost&&hostPresence&&MODES[hostPresence.md]&&hostPresence.md!==mpMode){mpMode=hostPresence.md;ggIdx=0;mpLoadout(mpMode);banner('MODE : '+MODES[mpMode].n.toUpperCase(),3,34)}
  peers.forEach(p=>{if(p.isMe)return;const q=p.presence||{};if(q.m!==1||typeof q.x!=='number')return;seen.add(p.peer);
   let r=remote.get(p.peer);if(!r){r=mkRemote(String(q.n||'Joueur').slice(0,16));r.parts.forEach(m=>m.userData.pl=p.peer);remote.set(p.peer,r)}
@@ -1769,7 +1782,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
   if(want&&!bossCtl){bossCtl=true;be0.net=null;be0.ph=0;be0.pt=0;be0.hitSet=null;be0.atk=Math.min(be0.atk||0,.6);held=0;fired=0;P.pos.set(be0.g.position.x,be0.g.position.y,be0.g.position.z);P.vel.set(0,0,0);P.speedMul=[.8,1.15,.7,1.05,.7][be0.bt];ctlH=be0.eh*.4;banner('VOUS ÊTES L’HÔTE : VOUS ÊTES LE BOSS · '+BT[be0.bt].n+' · clic = attaque'+(be0.bt===3?' · clic droit = blink':''),4,26)}
   else if(!want&&bossCtl){bossCtl=false;P.speedMul=1;if(be0)banner('VOUS PERDEZ LE BOSS',2.5,30)}}
  {const bl=bossLive();if(bl!==mpBossLive){mpBossLive=bl;if(bl){mpModeBeforeBoss=mpMode;mpMode='dm';ggIdx=0;mpLoadout('dm');banner('BOSS EN VIE · DEATHMATCH ACTIVÉ',3,32)}else{if(mpModeBeforeBoss&&MODES[mpModeBeforeBoss])mpMode=mpModeBeforeBoss;mpModeBeforeBoss=null;ggIdx=0;mpLoadout(mpMode);banner('BOSS ÉLIMINÉ · MODE '+MODES[mpMode].n.toUpperCase()+' RÉTABLI',3,30)}}}
- room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:(P.dead||bossCtl)?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0,ho:isHost?1:0,nh:mpNextHost||0,nm:mpNextHostMap,bs:bossPack()});
+ room.presence({m:1,x:+P.pos.x.toFixed(2),y:+P.pos.y.toFixed(2),z:+P.pos.z.toFixed(2),yaw:+P.yaw.toFixed(2),n:myName,s:P.score,a:(P.dead||bossCtl)?0:1,c:P.hh<1.4?1:0,w:cur,mt:isHost?Math.max(0,(mpMapEndAt-Date.now())/1000):mapTime,mi:mapIndex,md:mpMode,au:mpAuto?1:0,br:mpBossRushMode?1:0,ho:isHost?1:0,nh:mpNextHost||0,nm:mpNextHostMap,bs:bossPack()});
  if(P.hp<=0&&!P.dead){resetKillstreak();P.dead=T;const kInf=lastK,kwInf=lastKWn,khInf=lastKH;room.emit('kill',{k:kInf,v:myId,wn:kwInf,hs:khInf});
   kfEntry(kInf?{killer:nameOf(kInf),weapon:kwInf||'',victim:myName,head:!!khInf}:{txt:'☠ '+myName+' — SUICIDE',color:'#8a94a0'});
   lastKH=0;
