@@ -185,6 +185,8 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  </div>
 
  <button id="playBtn">&#9654; LANCER LA PARTIE</button>
+ <button id="bossRushLaunch" style="width:100%;font-size:22px;padding:14px;margin-top:10px;letter-spacing:2px;background:#a33;color:#fff;border:2px solid #f66">☠ LANCER LE MODE BOSS RUSH</button>
+ <button id="bossRushMpLaunch" style="width:100%;font-size:22px;padding:14px;margin-top:10px;letter-spacing:1px;background:#174b73;color:#fff;border:2px solid #4ab7ff">🌐 LANCER BOSS RUSH MULTIJOUEUR<small style="display:block;font-size:12px;letter-spacing:0;margin-top:4px">Un joueur incarne le boss ; les autres le combattent</small></button>
 
  <div class="menuFoot">
   <button id="menuArmory">&#128295; Armurerie</button>
@@ -668,6 +670,8 @@ function setupMenu(){
   $('menuArmory').onclick=e=>{e.stopPropagation();armoryOpen()};
   $('armoryClose').onclick=e=>{e.stopPropagation();armoryClose()};
   $('playBtn').onclick=e=>{e.stopPropagation();mp=(wantMp&&!!room);newGame();lock()};
+  $('bossRushLaunch').onclick=e=>{e.stopPropagation();wantMp=false;mp=false;bossOnlyMode=true;mpBossRushMode=false;['modeBoss','modeSolo','modeMp','modeBossMp'].forEach(id=>$(id).classList.toggle('on',id==='modeBoss'));$('mpModeBox').style.display='none';$('mpn').textContent='';newGame();lock()};
+  $('bossRushMpLaunch').onclick=e=>{e.stopPropagation();if(!$('modeMp').disabled&&room){wantMp=true;mp=true;bossOnlyMode=false;mpBossRushMode=true;mpAuto=false;mpMode='dm';['modeSolo','modeMp','modeBoss','modeBossMp'].forEach(id=>$(id).classList.toggle('on',id==='modeBossMp'));$('mpModeBox').style.display='none';$('mpn').textContent='Boss Rush multijoueur : l’hôte incarne le boss, les autres joueurs le combattent. Le boss change après chaque élimination.';newGame();mpBossRushMode=true;mpMode='dm';syncMp();lock()}else{wantMp=true;mpBossRushMode=true;bossOnlyMode=false;$('modeBossMp').click();$('mpn').textContent='Le multijoueur en ligne n’est pas encore connecté. Attends la connexion puis relance.'}};
 }
 
 /* ================= AUDIO (synthétisé) ================= */
