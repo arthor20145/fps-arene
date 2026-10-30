@@ -218,6 +218,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
   <button id="armSetStart" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme de départ</button>
   <button id="armSetSecond" style="width:100%;margin-top:8px;font-size:16px">Définir comme arme secondaire</button></div>
  <div class="mgroup"><span class="mtitle">Améliorations des armes de boss</span><p style="font-size:13px;opacity:.75">Augmente les dégâts infligés par les attaques du boss lorsque tu l'incarnes en multijoueur.</p><div id="bossUpgradeInfo" style="margin:8px 0;color:#ffd65a"></div><button id="bossDamageUpgrade" style="width:100%;font-size:16px">Améliorer les dégâts</button></div>
+ <div class="mgroup"><span class="mtitle">Chargeur étendu</span><p style="font-size:13px;opacity:.75">Augmente la taille du chargeur de l'arme sélectionnée (la réserve de munitions augmente aussi).</p><div id="magInfo" style="margin:8px 0;color:#ffd65a"></div><button id="magUpgrade" style="width:100%;font-size:16px">Agrandir le chargeur</button></div>
  <div class="mgroup"><span class="mtitle">Viseur</span><div class="attRow" id="optScope"></div></div>
  <div class="mgroup"><span class="mtitle">Silencieux</span><div class="attRow" id="optSil"></div></div>
  <p id="armMsg" style="margin:4px 0 10px;font-size:14px;color:#ffd65a;min-height:18px"></p>
@@ -782,19 +783,26 @@ function bloodFx(p,dir,crit){
 function killFx(p){spark(v1.copy(p).setY(p.y+.4),0x7d0a0a,12,4.5,.08,12);
  addDecal(v1.copy(p).setY(.04),new R.Vector3(0,1,0),'blood',1.3+rnd()*.7);sfx.flesh(0)}
 /* ================= JOUEUR & ARMES ================= */
-const P={pos:new R.Vector3(),vel:new R.Vector3(),yaw:0,pitch:0,ground:true,hp:300,maxHp:300,hh:1.7,last:-9,score:0,streak:0,points:0,reloadMul:1,damageMul:1,speedMul:1};
+const P={pos:new R.Vector3(),vel:new R.Vector3(),yaw:0,pitch:0,ground:true,hp:150,maxHp:150,hh:1.7,last:-9,score:0,streak:0,points:0,reloadMul:1,damageMul:1,speedMul:1};
 const W=[
- {n:'M4A1',mag:30,dmg:45,rate:.09,auto:1,rec:.007,spr:.008,rl:1.6,points:10},
- {n:'M9',mag:12,dmg:35,rate:.22,auto:0,rec:.014,spr:.003,rl:1.2,points:12},
- {n:'SPAS-12',mag:6,dmg:17,rate:.9,auto:0,rec:.08,spr:.06,rl:2.2,pel:9,points:18},
- {n:'AWP',mag:5,dmg:120,rate:1.3,auto:0,rec:.1,spr:.002,rl:2.4,points:28},
- {n:'MINIGUN',mag:200,dmg:14,rate:.05,auto:1,rec:.006,spr:.03,rl:3.5,points:35},
- {n:'COUTEAU',mag:1,dmg:180,rate:.65,auto:0,rec:.03,spr:0,rl:.8,points:45,knife:1},
- {n:'RPG-7',mag:1,dmg:350,rate:1.2,auto:0,rec:.06,spr:.004,rl:2.6,points:40,rpg:1},
- {n:'AK-47',mag:35,dmg:50,rate:.1,auto:1,rec:.008,spr:.01,rl:1.9,points:22},
- {n:'UZI',mag:40,dmg:24,rate:.07,auto:1,rec:.004,spr:.012,rl:1.3,points:15},
- {n:'LANCE-FLAMMES',mag:120,dmg:9,rate:.06,auto:1,rec:.002,spr:0,rl:2.8,points:30,flame:1}
+ /* Équilibrage (PV joueur = 150) : fusils polyvalents ~250-290 DPS, SMG ~215, pistolet ~150, AWP/RPG/shotgun = gros coups lents, minigun/lance-flammes = armes de boss moins précises */
+ {n:'M4A1',mag:30,dmg:26,rate:.095,auto:1,rec:.007,spr:.008,rl:1.7,points:10},
+ {n:'M9',mag:12,dmg:30,rate:.2,auto:0,rec:.014,spr:.003,rl:1.2,points:12},
+ {n:'SPAS-12',mag:6,dmg:12,rate:1,auto:0,rec:.08,spr:.06,rl:2.4,pel:9,points:18},
+ {n:'AWP',mag:5,dmg:100,rate:1.5,auto:0,rec:.1,spr:.002,rl:2.6,points:28},
+ {n:'MINIGUN',mag:200,dmg:12,rate:.055,auto:1,rec:.006,spr:.035,rl:4.5,points:35},
+ {n:'COUTEAU',mag:1,dmg:100,rate:.55,auto:0,rec:.03,spr:0,rl:.8,points:45,knife:1},
+ {n:'RPG-7',mag:1,dmg:220,rate:1.2,auto:0,rec:.06,spr:.004,rl:3.2,points:40,rpg:1},
+ {n:'AK-47',mag:30,dmg:32,rate:.11,auto:1,rec:.011,spr:.013,rl:2,points:20},
+ {n:'UZI',mag:32,dmg:14,rate:.065,auto:1,rec:.004,spr:.015,rl:1.4,points:15},
+ {n:'LANCE-FLAMMES',mag:100,dmg:6,rate:.06,auto:1,rec:.002,spr:0,rl:3,points:30,flame:1}
 ];
+/* chargeurs étendus (armurerie) : mag0 = taille de base, W.mag = taille effective */
+W.forEach(w=>w.mag0=w.mag);
+const MAG_MAX=4,MAG_BASE_COST=120;
+const magStep=i=>Math.max(1,Math.round(W[i].mag0*.15));
+const magCanUpgrade=i=>!W[i].knife&&!W[i].rpg;
+const magCost=lvl=>Math.round(MAG_BASE_COST*Math.pow(1.6,lvl));
 const A=[{ammo:30,res:120},{ammo:12,res:75},{ammo:6,res:24},{ammo:5,res:15},{ammo:0,res:0},{ammo:1,res:0},{ammo:1,res:4},{ammo:35,res:140},{ammo:40,res:160},{ammo:120,res:240}];
 let cur=0,reload=0,swap=0,nextShot=0,heat=0,kick=0,flashT=0,held=0,fired=0,adsHeld=0,adsT=0,bobT=0,lastStep=0,T=0;
  let hasMini=false,gren=3,strikes=0,uav=0,rage=0,shake=0,gCool=0,stam=1,sprintA=0,swayX=0,swayY=0;
@@ -815,7 +823,7 @@ const shopStock={hp:SHOP_MAX.hp,ammo:SHOP_MAX.ammo,reload:SHOP_MAX.reload,damage
 const air=[],gr=[],rk=[],k={};
 function shopPrice(id){const c=SHOP_CFG[id];return Math.round(c.base*Math.pow(c.growth,shopBought[id]));}
 function resetShopStock(){Object.keys(SHOP_MAX).forEach(id=>shopStock[id]=SHOP_MAX[id]);updateShopUI()}
-function resetShopProgress(){Object.keys(shopBought).forEach(id=>shopBought[id]=0);P.points=0;P.maxHp=300;P.hp=300;P.reloadMul=1;P.damageMul=1;P.speedMul=1;resetShopStock()}
+function resetShopProgress(){Object.keys(shopBought).forEach(id=>shopBought[id]=0);P.points=0;P.maxHp=150;P.hp=150;P.reloadMul=1;P.damageMul=1;P.speedMul=1;resetShopStock()}
 function shopOpen(){if(state!=='play')return;state='shop';held=0;adsHeld=0;document.exitPointerLock();$('shop').style.display='flex';updateShopUI()}
 function shopClose(){if(state!=='shop')return;$('shop').style.display='none';state='play';lock()}
 function buyShop(id){if(state!=='shop'||shopStock[id]<=0)return;const price=shopPrice(id);if(P.points<price)return;P.points-=price;shopStock[id]--;shopBought[id]++;
@@ -832,6 +840,10 @@ if(!Array.isArray(save.own)||save.own.length!==W.length)save.own=[true,true,true
 save.own=W.map(()=>true); /* toutes les armes sont débloquées dans l'armurerie */
 if(!save.bought)save.bought={};
 if(!Number.isFinite(save.bossDmg)||save.bossDmg<0)save.bossDmg=0;
+if(!save.mag||typeof save.mag!=='object')save.mag={};
+function applyMags(){W.forEach((w,i)=>{const l=Math.max(0,Math.min(MAG_MAX,save.mag[i]|0));w.mag=magCanUpgrade(i)?w.mag0+l*magStep(i):w.mag0})}
+applyMags();
+const MP_KILL_PTS=25; /* points d'armurerie gagnés par kill en multijoueur (+10 si headshot) */
 /* chargeur = [arme principale, arme secondaire] : 2 armes à feu différentes (le couteau est toujours porté en plus) */
 function normLoadout(){const l=[save.start,save.second].filter((v,i,a)=>typeof v==='number'&&v>=0&&v<W.length&&!W[v].knife&&a.indexOf(v)===i);
  for(const d of [1,0,2,3,7,8,4,6]){if(l.length>=2)break;if(!l.includes(d))l.push(d)}return l.slice(0,2)}
@@ -849,6 +861,10 @@ function setAtt(kind,key){ARM[armSel][kind]=key;save.arm[armSel]={scope:ARM[armS
 function updateArmoryUI(){
  $('armPoints').textContent='Solde : '+save.bank+' pts';
  const bLvl=save.bossDmg||0,bCost=bossDamageCost(bLvl),bi=$('bossUpgradeInfo'),bu=$('bossDamageUpgrade');if(bi)bi.textContent='Niveau '+bLvl+' · Dégâts x'+bossDamageMult().toFixed(2)+' · Prochain niveau : '+bCost+' pts';if(bu){bu.textContent='Améliorer les dégâts ('+bCost+' pts)';bu.disabled=save.bank<bCost||bLvl>=10;bu.onclick=()=>{if(save.bank<bCost||bLvl>=10)return;save.bank-=bCost;save.bossDmg=bLvl+1;saveGame();updateArmoryUI();$('armMsg').textContent='✔ Dégâts des armes de boss améliorés !'}}
+ {const mi=$('magInfo'),mb=$('magUpgrade'),ml=Math.max(0,Math.min(MAG_MAX,save.mag[armSel]|0)),can=magCanUpgrade(armSel),mc=magCost(ml);
+  if(mi)mi.textContent=can?W[armSel].n+' · Niveau '+ml+'/'+MAG_MAX+' · Chargeur : '+W[armSel].mag+(ml<MAG_MAX?' → '+(W[armSel].mag+magStep(armSel))+' · Prochain niveau : '+mc+' pts':' (maximum)'):W[armSel].n+' : non applicable';
+  if(mb){mb.textContent=!can?'Non disponible':ml>=MAG_MAX?'Niveau maximum':'Agrandir le chargeur ('+mc+' pts)';mb.disabled=!can||ml>=MAG_MAX||save.bank<mc;
+   mb.onclick=()=>{if(!can||ml>=MAG_MAX||save.bank<mc)return;save.bank-=mc;save.mag[armSel]=ml+1;applyMags();saveGame();sfx.hit();updateArmoryUI();$('armMsg').textContent='✔ Chargeur de '+W[armSel].n+' agrandi : '+W[armSel].mag+' munitions.'}}}
  const wg=$('armWeapons');wg.innerHTML='';
  W.forEach((w,i)=>{const b=document.createElement('button');b.className=i===armSel?'on':'';b.disabled=!save.own[i];
   const isStart=i===save.start;
@@ -889,7 +905,7 @@ function updateArmoryUI(){
   ['Zoom en visée',(w.az+sc.az)+'°',(w.az)+'°'],
   ['Dispersion',Math.round(sc.spr*100)+'%','<i>100%</i>'],
   ['Bruit',Math.round(si.loud*100)+'%','<i>100%</i>'],
-  ['Chargeur',w.mag+' ('+A[armSel].ammo+' / '+A[armSel].res+')','']];
+  ['Taille du chargeur',w.mag,'<i>'+w.mag0+'</i>']];
 $('armStats').innerHTML=rows.map(r=>'<div class="armStatRow"><span>'+r[0]+'</span><b>'+r[1]+'</b><i>'+r[2]+'</i></div>').join('')
    +'<p style="font-size:13px;opacity:.65;margin-top:10px">Viseur : '+sc.n+' — '+SCOPE_DESC[ARM[armSel].scope]
    +'<br>Silencieux : '+si.n+' — '+SIL_DESC[ARM[armSel].sil]+'</p>';
@@ -1214,7 +1230,7 @@ function fireFlame(dm){
  flushFlame()}
 /* brûlure : les ennemis touchés continuent de prendre des dégâts pendant ~3 s */
 function updBurn(dt){
- for(const e of enemies){if(e.dead||!(e.burn>0))continue;e.burn-=dt;e.hp-=14*P.damageMul*dt;
+ for(const e of enemies){if(e.dead||!(e.burn>0))continue;e.burn-=dt;e.hp-=10*P.damageMul*dt;
   if(rnd()<dt*18){const p=e.g.position;flameP(new R.Vector3(p.x+(rnd()-.5)*.5,p.y+.6+rnd()*(e.boss?3:1.2),p.z+(rnd()-.5)*.5),new R.Vector3((rnd()-.5)*.6,1.6+rnd()*1.2,(rnd()-.5)*.6),.55,.25,.8)}
   if(e.hp<=0&&!e.dead)kill(e,false,W[9].n)}
  flushFlame()}
@@ -1372,7 +1388,7 @@ function mpSpawnBoss(){let t;do{t=Math.floor(rnd()*BT.length)}while(t===mpBt&&BT
 function bossPack(){if(!bossCtl)return 0;const e=bossEnt();if(!e||e.dying)return 0;const p=e.g.position;return{i:e.bid|0,t:e.bt,x:+p.x.toFixed(1),z:+p.z.toFixed(1),y:+e.g.rotation.y.toFixed(2),h:Math.round(e.hp),m:Math.round(e.mhp),ph:e.ph|0,k:e.blk|0}}
 function bossBlast(p,r,dm){dm*=bossDamageMult();spark(p,0xff9922,25,12,.35);spark(p,0x555555,15,6,.5);sfx.boom();ringFx(v1.copy(p).setY(.15),new R.Vector3(0,1,0),0xff8833,8);const d=p.distanceTo(cam.position);shake=Math.max(shake,Math.max(0,1-d/40));if(!P.dead&&d<r+1.2)hurt(dm*(1-d/(r+1.2)),p);blastKb(p,r,12)}
 function bossDeadNet(d){const e=bossEnt();if(!e)return;deadBid=d.i;e.dead=T;e.hp=0;killFx(e.g.position);shake=Math.max(shake,.7);sfx.boom();ringFx(v1.copy(e.g.position).setY(.2),new R.Vector3(0,1,0),0xff5522,7);
- const mine=d.by===myId;const nextBossId=mp&&mpBossRushMode&&d.by?d.by:null;/* Le changement de boss après un coup fatal est réservé au mode Boss Rush multijoueur. */if(nextBossId)mpBossNextOwner=nextBossId;P.score+=mine?1500:400;if(!P.dead){P.hp=P.maxHp;refill()}if(mine)registerKillstreak();
+ const mine=d.by===myId;const nextBossId=mp&&mpBossRushMode&&d.by?d.by:null;/* Le changement de boss après un coup fatal est réservé au mode Boss Rush multijoueur. */if(nextBossId)mpBossNextOwner=nextBossId;P.score+=mine?1500:400;if(mine){save.bank+=100;saveGame()}if(!P.dead){P.hp=P.maxHp;refill()}if(mine)registerKillstreak();
  kfEntry({killer:mine?myName:nameOf(d.by),weapon:'',victim:BT[e.bt].n,me:mine,color:'#ffd447'});banner(BT[e.bt].n+' ÉLIMINÉ · '+(mine?'+1500':'+400'),4,34);if(nextBossId)banner(nameOf(nextBossId)+' A TUÉ LE BOSS ET DEVIENT LE PROCHAIN BOSS !',4,28)}
 function bossFxRun(d,m){
  if(d.a==='shell'){const a=new R.Vector3(d.x,5,d.z),b=new R.Vector3(d.tx,.1,d.tz),mk=new R.Mesh(new R.SphereGeometry(.45,10,10),new R.MeshBasicMaterial({color:0xffa030})),ring=new R.Mesh(bsRingG,bsRingM(0xff3311));ring.rotation.x=-Math.PI/2;ring.position.set(d.tx,.08,d.tz);ring.scale.setScalar(6);mk.visible=false;scene.add(mk,ring);bShells.push({a,b,m:mk,r:ring,t:-(d.dl||0),dur:1.5+a.distanceTo(b)/40})}
@@ -1687,7 +1703,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
  else renderer.render(scene,cam)}
 /* ================= ÉTAT & ENTRÉES ================= */
 function newGame(){bossClear();bossCtl=false;enemies.forEach(e=>scene.remove(e.g));enemies.length=0;picks.forEach(q=>scene.remove(q.m));picks.length=0;
- mapIndex=0;applyMap(0,false);resetMapTimer();mpHostId=null;mpHostSeen=null;mpNextHost=null;mpNextHostMap=-1;mpPend=null;nhShown=-1;mpBossNextOwner=null;Object.assign(P,{hp:100,maxHp:100,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;P.sh=mp?T+2:0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};A[6]={ammo:0,res:0};rk.forEach(r=>scene.remove(r.m));rk.length=0;flames.forEach(s=>s.visible=false);flameAcc={};
+ mapIndex=0;applyMap(0,false);resetMapTimer();mpHostId=null;mpHostSeen=null;mpNextHost=null;mpNextHostMap=-1;mpPend=null;nhShown=-1;mpBossNextOwner=null;Object.assign(P,{hp:150,maxHp:150,score:0,yaw:0,pitch:0,last:-9,hh:1.7,points:0,reloadMul:1,damageMul:1,speedMul:1});P.pos.set(0,0,0);P.vel.set(0,0,0);P.dead=0;P.sh=mp?T+2:0;if(mp)respawnPos();A[0]={ammo:0,res:0};A[1]={ammo:12,res:48};A[2]={ammo:0,res:0};A[3]={ammo:0,res:0};A[4]={ammo:0,res:0};A[5]={ammo:1,res:0};A[6]={ammo:0,res:0};rk.forEach(r=>scene.remove(r.m));rk.length=0;flames.forEach(s=>s.visible=false);flameAcc={};
  /* les armes débloquées dans l'armurerie sont disponibles et l'arme choisie est équipée */
  carry=normLoadout();owned=save.own.slice();owned[save.start]=true;owned[0]=true;owned[1]=true;owned[5]=true;
  if(mp){owned=owned.map(()=>true);cheats.god=cheats.infiniteAmmo=cheats.oneShot=false;cheatUnlocked=false;konamiPos=0;$('cheat').style.display='none'}
@@ -1796,7 +1812,7 @@ function mpTick(dt){const seen=new Set(),peers=room.peers();
 async function initMp(){if(!window.claude)return;try{room=pubRoom=await claude.use('room')}catch(e){}if(!room)return;
  $('modeMp').disabled=false;$('modeMp').onclick=e=>{e.stopPropagation();wantMp=true;$('modeMp').classList.add('on');$('modeSolo').classList.remove('on')};
  room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!==myId||P.dead||P.hp<=0||state!=='play'||typeof d.d!=='number')return;lastK=m.peer;lastKWn=m.data.wn||wName(m.data.w);wByPeer[m.peer]=lastKWn;if(m.data.hs)lastKH=1;const r=remote.get(m.peer);hurt(Math.min(Math.max(d.d,0),250),r?r.g.position:P.pos)});
- room.on('kill',m=>{const d=m.data;if(!mp||!d)return;kfEntry(d.k?{killer:nameOf(d.k),weapon:killerWeapon(d),victim:nameOf(d.v),head:!!d.hs,me:d.k===myId,color:d.k===myId?'#ffd447':'#7c4'}:{txt:'☠ '+nameOf(d.v)+' — SUICIDE',color:'#8a94a0'});if(d.k===myId&&d.v!==myId){P.score+=100;registerKillstreak();if(MODES[mpMode].gg)ggAdvance()}});
+ room.on('kill',m=>{const d=m.data;if(!mp||!d)return;kfEntry(d.k?{killer:nameOf(d.k),weapon:killerWeapon(d),victim:nameOf(d.v),head:!!d.hs,me:d.k===myId,color:d.k===myId?'#ffd447':'#7c4'}:{txt:'☠ '+nameOf(d.v)+' — SUICIDE',color:'#8a94a0'});if(d.k===myId&&d.v!==myId){P.score+=100;{const g=MP_KILL_PTS+(d.hs?10:0);save.bank+=g;saveGame();banner('+'+g+' PTS ARMURERIE',1.2,26)}registerKillstreak();if(MODES[mpMode].gg)ggAdvance()}});
  room.on('hit',m=>{const d=m.data;if(!mp||!d||d.t!=='boss'||!bossCtl||typeof d.d!=='number')return;const e=bossEnt();if(!e||e.dying)return;e.hp-=Math.min(Math.max(d.d,0),400);e.fl=.12;flashEnemy(e);if(e.hp<=0){e.hp=0;e.dying=1;bossFx({a:'dead',by:m.peer,i:e.bid})}});
  room.on('boss',m=>{if(mp&&m.data)bossFxRun(m.data,m)});
  room.on('rocket',m=>{const d=m.data;if(!mp||m.isMe||!d||typeof d.x!=='number')return;spawnRocket(new R.Vector3(d.x,d.y,d.z),new R.Vector3(d.dx,d.dy,d.dz).normalize(),0,true)});
