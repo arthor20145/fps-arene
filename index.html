@@ -146,6 +146,52 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
 .armStatRow b{color:#9fe07a;font-weight:normal}
 .armStatRow i{font-style:normal;opacity:.55;font-size:12px}
 #armoryClose{background:#888;margin-top:16px}
+
+/* ===== REFONTE MENU v2 ===== */
+:root{--bg:#07090c;--card:#10151b;--card2:#161d25;--line:#26323d;--acc:#8be04a;--acc2:#3fd0ff;--warn:#ffb02e;--danger:#ff4b4b;--txt:#e8f0f7;--mut:#8da0b3}
+#menu{display:flex;align-items:stretch;justify-content:stretch;padding:0;text-align:left;cursor:default;
+ background:radial-gradient(1200px 600px at 78% 8%,rgba(63,208,255,.14),transparent 60%),radial-gradient(900px 600px at 8% 100%,rgba(139,224,74,.12),transparent 60%),linear-gradient(135deg,#07090c,#0d131a 60%,#07090c)}
+#menu::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px);pointer-events:none}
+#menuPanel{position:relative;width:100%;max-width:none;max-height:none;height:100%;overflow:auto;background:none;border:0;box-shadow:none;padding:0;display:grid;grid-template-columns:minmax(300px,38%) 1fr;grid-template-rows:1fr auto}
+.mHero{padding:6vh 5vw 3vh;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(139,224,74,.05),transparent)}
+.mBadge{align-self:flex-start;font:700 11px/1 monospace;letter-spacing:3px;color:var(--acc);border:1px solid var(--acc);padding:6px 10px;border-radius:3px;margin-bottom:22px}
+#menuPanel h1{font:900 clamp(44px,6.4vw,92px)/.92 'Arial Black',Arial,sans-serif;letter-spacing:-1px;margin:0;text-shadow:none;color:var(--txt)}
+#menuPanel h1 span{display:block;color:var(--acc);text-shadow:0 0 28px rgba(139,224,74,.45)}
+#menuTag{opacity:1;color:var(--mut);letter-spacing:2px;font-size:13px;margin:18px 0 26px;max-width:340px;line-height:1.6}
+.mStats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:380px}
+.mStats div{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center}
+.mStats b{display:block;font-size:20px;color:var(--acc)}.mStats small{font-size:10px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
+.mMain{padding:5vh 4vw 2vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.mgroup{margin:10px 0}
+.mgroup>.mtitle{display:flex;align-items:center;gap:10px;font:700 11px/1 monospace;letter-spacing:3px;color:var(--mut);opacity:1;margin-bottom:12px}
+.mgroup>.mtitle::after{content:"";flex:1;height:1px;background:var(--line)}
+.modeRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.modeRow button{position:relative;margin:0;text-align:left;font:800 17px/1.2 Arial,sans-serif;padding:18px 16px 16px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:8px;transition:transform .12s,border-color .12s,background .12s;display:flex;flex-direction:column;gap:6px}
+.modeRow button small{font:400 12px/1.4 Arial,sans-serif;color:var(--mut)}
+.modeRow button:hover{transform:translateY(-2px);border-color:var(--acc2)}
+.modeRow button.on{background:linear-gradient(160deg,rgba(139,224,74,.22),var(--card));border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 8px 30px rgba(139,224,74,.15);color:var(--txt)}
+.modeRow button.on small{color:#cfe8b8}
+.modeRow button.on::after{content:"\2713";position:absolute;right:12px;top:10px;color:var(--acc);font-size:16px}
+.diffRow{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.diffRow button{border-radius:8px;background:var(--card);border:1px solid var(--line);color:var(--txt);padding:12px 8px;font-weight:700}
+.diffRow button small{color:var(--mut)}
+.diffRow button:hover{border-color:var(--acc2)}
+.diffRow button.on{background:var(--acc);border-color:var(--acc);color:#0a1204}.diffRow button.on small{color:#2a4310;opacity:1}
+#diffNote{color:var(--mut);font-size:13px;margin-top:10px}
+#playBtn{width:100%;margin-top:14px;padding:20px;font:900 24px 'Arial Black',Arial,sans-serif;letter-spacing:4px;color:#0a1204;border:0;border-radius:8px;background:linear-gradient(90deg,var(--acc),#b6f26f);box-shadow:0 10px 36px rgba(139,224,74,.3);transition:transform .12s,box-shadow .12s}
+#playBtn:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(139,224,74,.45)}
+#bossRushLaunch,#bossRushMpLaunch{width:calc(50% - 6px)!important;display:inline-block;vertical-align:top;margin:10px 0 0!important;padding:14px 10px!important;font:800 14px Arial,sans-serif!important;letter-spacing:1px!important;border-radius:8px!important;background:var(--card)!important;color:var(--txt)!important}
+#bossRushLaunch{border:1px solid var(--danger)!important;margin-right:12px!important}
+#bossRushMpLaunch{border:1px solid var(--acc2)!important}
+#bossRushLaunch:hover{background:rgba(255,75,75,.15)!important}#bossRushMpLaunch:hover{background:rgba(63,208,255,.15)!important}
+.menuFoot{grid-column:1/-1;justify-content:space-between;padding:14px 4vw;margin:0;border-top:1px solid var(--line);background:rgba(0,0,0,.35);align-items:center}
+.menuFoot button{background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:10px 18px}
+.menuFoot button:hover{border-color:var(--acc);color:var(--acc)}
+.mFootL{display:flex;gap:10px;flex-wrap:wrap}.mFootR{font-size:12px;color:var(--mut)}
+.keyGrid{grid-column:1/-1;padding:0 4vw 14px;background:rgba(0,0,0,.35)}
+#nameRow input{border-radius:6px!important;background:var(--card)!important;border-color:var(--line)!important}
+#mpModeBox .diffRow button{background:var(--card)}
+@media(max-width:820px){#menuPanel{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}.mHero{border-right:0;border-bottom:1px solid var(--line);padding:4vh 6vw 2vh}.mStats{display:none}.mMain{padding:3vh 6vw}#bossRushLaunch,#bossRushMpLaunch{width:100%!important;margin-right:0!important}}
 </style></head><body>
 <div id="err" style="display:none;position:fixed;left:8px;bottom:8px;max-width:70vw;background:rgba(120,0,0,.9);color:#fff;font:12px monospace;padding:6px;z-index:99;white-space:pre-wrap"></div>
 <div id="hud">
@@ -159,10 +205,14 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  <div id="bn"></div><div id="banner2"></div><div id="kf"></div><div id="bb"><div id="bbf"></div></div>
 </div>
 <div class="ov" id="menu"><div id="menuPanel">
- <h1>ARÈNE FPS</h1>
- <p id="menuTag">Survie en vagues &middot; boss toutes les 5 vagues</p>
-
- <div class="mgroup"><span class="mtitle">Mode de jeu</span>
+ <div class="mHero">
+  <span class="mBadge">v1.1 &middot; SOLO + EN LIGNE</span>
+  <h1>ARÈNE<span>FPS</span></h1>
+  <p id="menuTag">Survie en vagues &middot; boss toutes les 5 vagues &middot; deathmatch en ligne</p>
+  <div class="mStats"><div><b>4</b><small>Modes</small></div><div><b>4</b><small>Difficultés</small></div><div><b>5</b><small>Vagues/boss</small></div></div>
+ </div>
+ <div class="mMain">
+ <div class="mgroup"><span class="mtitle">01 &middot; MODE DE JEU</span>
   <div class="modeRow">
    <button id="modeSolo" class="on">&#127919; Solo &mdash; Vagues</button>
    <button id="modeMp">&#127760; En ligne &mdash; Deathmatch</button>
@@ -174,7 +224,7 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
   <div id="nameRow" style="display:none;margin:10px 2px 0;align-items:center;gap:10px"><label for="pname" style="font-size:14px;opacity:.85">Ton pseudo</label><input id="pname" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Pseudo" style="flex:1;min-width:0;padding:8px 10px;font-size:16px;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:6px;outline:none"></div>
  </div>
 
- <div class="mgroup"><span class="mtitle">Difficulté</span>
+ <div class="mgroup"><span class="mtitle">02 &middot; DIFFICULTÉ</span>
   <div class="diffRow" id="diffRow">
    <button data-d="easy">&#128994; Facile<small>moins de PV ennemis</small></button>
    <button data-d="normal" class="on">&#128308; Normal<small>équilibré</small></button>
@@ -188,14 +238,17 @@ button{font-size:22px;padding:10px 30px;margin-top:16px;background:#7c4;border:0
  <button id="bossRushLaunch" style="width:100%;font-size:22px;padding:14px;margin-top:10px;letter-spacing:2px;background:#a33;color:#fff;border:2px solid #f66">☠ LANCER LE MODE BOSS RUSH</button>
  <button id="bossRushMpLaunch" style="width:100%;font-size:22px;padding:14px;margin-top:10px;letter-spacing:1px;background:#174b73;color:#fff;border:2px solid #4ab7ff">🌐 LANCER BOSS RUSH MULTIJOUEUR<small style="display:block;font-size:12px;letter-spacing:0;margin-top:4px">Un joueur incarne le boss ; les autres le combattent</small></button>
 
+ </div>
  <div class="menuFoot">
-  <button id="menuArmory">&#128295; Armurerie</button>
-  <button id="menuSettings">&#9881; Paramètres</button>
-  <button id="menuHelp">&#128273; Commandes</button>
+  <div class="mFootL">
+   <button id="menuArmory">&#128295; Armurerie</button>
+   <button id="menuSettings">&#9881; Paramètres</button>
+   <button id="menuHelp">&#128273; Commandes</button>
+  </div>
+  <div class="mFootR">La souris est capturée au lancement &mdash; Échap = pause</div>
  </div>
  <div class="keyGrid" id="keyGrid" style="display:none"></div>
- <p style="font-size:13px;opacity:.55;margin-top:14px">Le jeu capture la souris au lancement &mdash; Échap pour mettre en pause.</p>
- </div></div>
+</div></div>
 <div class="ov" id="pause">
 <h1>PAUSE</h1>
 <div id="pauseButtons"><button id="resumeBtn">Reprendre</button><button id="settingsBtn">Paramètres</button><button id="cheatBtn">🧪 Cheats</button><button id="quitBtn">🚪 Quitter la partie</button></div>
